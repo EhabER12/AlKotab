@@ -317,7 +317,7 @@ export default function ProductsPage() {
                           )}
                         </TableCell>
                         <TableCell>
-                          {product.basePrice} {product.currency || "SAR"}
+                          {product.basePrice} {product.currency || "EGP"}
                         </TableCell>
                         <TableCell>{product.variants?.length || 0}</TableCell>
                         <TableCell>

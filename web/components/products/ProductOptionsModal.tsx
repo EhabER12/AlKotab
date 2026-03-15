@@ -13,7 +13,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ShoppingBag, Minus, Plus, Star } from "lucide-react";
-import { SarIcon } from "@/components/ui/sar-icon";
 import {
   Product,
   ProductVariant,
@@ -21,6 +20,7 @@ import {
 } from "@/store/slices/productSlice";
 import { useAppDispatch } from "@/store/hooks";
 import { addToCart } from "@/store/slices/cartSlice";
+import { useCurrencyContext } from "@/contexts/CurrencyContext";
 import toast from "react-hot-toast";
 
 // Localized strings
@@ -59,6 +59,13 @@ const getLocalizedText = (
   return text[locale as "ar" | "en"] || text.en || text.ar || "";
 };
 
+const normalizeCurrency = (currency?: string): "SAR" | "EGP" | "USD" => {
+  if (currency === "SAR" || currency === "EGP" || currency === "USD") {
+    return currency;
+  }
+  return "EGP";
+};
+
 interface ProductOptionsModalProps {
   product: Product | null;
   isOpen: boolean;
@@ -75,6 +82,7 @@ export function ProductOptionsModal({
   const isRtl = locale === "ar";
   const t = strings[locale as "ar" | "en"] || strings.en;
   const dispatch = useAppDispatch();
+  const { selectedCurrency, convert, format } = useCurrencyContext();
 
   // State
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(
@@ -96,6 +104,14 @@ export function ProductOptionsModal({
   }, [product]);
 
   if (!product) return null;
+
+  const productCurrency = normalizeCurrency(product.currency);
+  const formatPrice = (amount: number) =>
+    format(
+      convert(amount, productCurrency, selectedCurrency),
+      selectedCurrency,
+      isRtl ? "ar" : "en"
+    );
 
   // Calculate price
   const basePrice = selectedVariant?.price ?? product.basePrice;
@@ -249,9 +265,8 @@ export function ProductOptionsModal({
                           </div>
                         </div>
                         <div className={isRtl ? "text-left" : "text-right"}>
-                          <p className="font-bold text-primary text-sm sm:text-base inline-flex items-center gap-1">
-                            {variant.price}{" "}
-                            <SarIcon size={30} className="text-primary" />
+                          <p className="font-bold text-primary text-sm sm:text-base">
+                            {formatPrice(Number(variant.price || 0))}
                           </p>
                         </div>
                       </label>
@@ -293,9 +308,8 @@ export function ProductOptionsModal({
                             {getLocalizedText(addon.name, locale)}
                           </p>
                         </div>
-                        <p className="font-bold text-green-600 text-sm sm:text-base inline-flex items-center gap-1">
-                          +{addon.price}{" "}
-                          <SarIcon size={30} className="text-primary" />
+                        <p className="font-bold text-green-600 text-sm sm:text-base">
+                          +{formatPrice(Number(addon.price || 0))}
                         </p>
                       </div>
                     );
@@ -338,8 +352,8 @@ export function ProductOptionsModal({
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
               <div className="text-center sm:text-left">
                 <p className="text-sm text-gray-500">{t.total}</p>
-                <p className="text-xl sm:text-2xl font-bold text-primary inline-flex items-center gap-1">
-                  {totalPrice} <SarIcon size={45} className="text-primary" />
+                <p className="text-xl sm:text-2xl font-bold text-primary">
+                  {formatPrice(totalPrice)}
                 </p>
               </div>
               <Button

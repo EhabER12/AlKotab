@@ -43,7 +43,7 @@ export function ServicePricingTiers({
       {
         name: { ar: "", en: "" },
         price: null,
-        currency: "SAR",
+        currency: "EGP",
         description: { ar: "", en: "" },
         features: { ar: [], en: [] },
         isPopular: false,
@@ -183,10 +183,10 @@ export function ServicePricingTiers({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="EGP">EGP</SelectItem>
                   <SelectItem value="SAR">SAR</SelectItem>
                   <SelectItem value="USD">USD</SelectItem>
                   <SelectItem value="EUR">EUR</SelectItem>
-                  <SelectItem value="EGP">EGP</SelectItem>
                 </SelectContent>
               </Select>
             </div>

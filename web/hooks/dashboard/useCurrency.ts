@@ -11,7 +11,7 @@ export interface CurrencySettings {
 export const useCurrency = () => {
   const { isRtl } = useAdminLocale();
   const [settings, setSettings] = useState<CurrencySettings>({
-    baseCurrency: "SAR",
+    baseCurrency: "EGP",
     exchangeRates: {
       USD: 1,
       SAR: 3.75,

@@ -84,7 +84,7 @@ const cartSessionSchema = new mongoose.Schema(
     },
     currency: {
       type: String,
-      default: "SAR",
+      default: "EGP",
     },
 
     // Optional: linked user if logged in

@@ -143,7 +143,7 @@ export default function FinanceDashboardPage() {
 
   // Display currency for all amounts
   const [displayCurrency, setDisplayCurrency] = useState<"SAR" | "EGP" | "USD">(
-    "SAR"
+    "EGP"
   );
 
   // Exchange rates (relative to USD)
@@ -169,7 +169,7 @@ export default function FinanceDashboardPage() {
   const [newTransaction, setNewTransaction] = useState({
     type: "income" as "income" | "expense" | "adjustment",
     amount: "",
-    currency: "SAR",
+    currency: "EGP",
     category: "",
     customCategory: "",
     description: "",

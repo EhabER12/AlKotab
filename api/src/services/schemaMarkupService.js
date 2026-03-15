@@ -65,13 +65,14 @@ export class SchemaMarkupService {
 
     // Get pricing - handle various pricing structures
     let price = product.basePrice || 0;
-    let priceCurrency = "SAR";
+    let priceCurrency = product.currency || "EGP";
 
     if (product.pricingTiers && product.pricingTiers.length > 0) {
       price =
         product.pricingTiers[0].price ||
         product.pricingTiers[0].basePrice ||
         price;
+      priceCurrency = product.pricingTiers[0].currency || priceCurrency;
     }
 
     return {

@@ -98,7 +98,7 @@ export const createOrUpdateSession = async (req, res) => {
         $set: {
           cartItems: sanitizedCartItems,
           cartTotal: safeCartTotal,
-          currency: currency || "SAR",
+          currency: currency || "EGP",
           status: nextStatus,
           lastActivityAt: new Date(),
           deviceInfo,
@@ -162,7 +162,7 @@ export const updateCustomerInfo = async (req, res) => {
         },
         cartItems: [],
         cartTotal: 0,
-        currency: "SAR",
+        currency: "EGP",
         checkoutStartedAt: new Date(),
         lastActivityAt: new Date(),
       });

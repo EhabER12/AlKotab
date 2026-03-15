@@ -34,7 +34,7 @@ async function updateFinanceSettings() {
       settings.financeSettings = {};
     }
 
-    settings.financeSettings.baseCurrency = settings.financeSettings.baseCurrency || "SAR";
+    settings.financeSettings.baseCurrency = settings.financeSettings.baseCurrency || "EGP";
     settings.financeSettings.exchangeRates = {
       USD: 1,
       SAR: 3.75,  // 3.75 SAR = 1 USD

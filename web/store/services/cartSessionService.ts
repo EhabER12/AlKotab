@@ -144,7 +144,7 @@ function transformCartItems(items: CartItem[]) {
 export async function syncCartSession(
   items: CartItem[],
   total: number,
-  currency = "SAR"
+  currency = "EGP"
 ) {
   try {
     const sessionId = getOrCreateSessionId();
@@ -196,7 +196,7 @@ export async function updateCustomerInfo(customerInfo: {
           sessionId,
           cartItems: [],
           cartTotal: 0,
-          currency: "SAR",
+          currency: "EGP",
         });
 
         return await requestWithApiPrefixFallback(

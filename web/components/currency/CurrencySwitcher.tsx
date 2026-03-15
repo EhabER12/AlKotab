@@ -32,7 +32,7 @@ export function CurrencySwitcher({
   const [open, setOpen] = useState(false);
 
   const currentConfig = getCurrencyConfig(selectedCurrency);
-  const currencies: Array<"SAR" | "EGP" | "USD"> = ["SAR", "EGP", "USD"];
+  const currencies: Array<"SAR" | "EGP" | "USD"> = ["EGP", "SAR", "USD"];
 
   const handleSelect = (currency: "SAR" | "EGP" | "USD") => {
     setSelectedCurrency(currency);

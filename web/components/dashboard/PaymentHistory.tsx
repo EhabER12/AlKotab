@@ -621,7 +621,7 @@ export default function PaymentHistory() {
 
                 // Use cart session currency for cart items, payment currency for payment items
                 const itemsCurrency = hasCartItems
-                  ? cartSession?.currency || "SAR"
+                  ? cartSession?.currency || "EGP"
                   : selectedPayment.currency || "EGP";
 
                 return (

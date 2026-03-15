@@ -278,7 +278,7 @@ export default function ProductsPage() {
                           <span className="text-sm text-muted-foreground line-through">
                             <PriceDisplay
                               amount={product.compareAtPrice!}
-                              currency={(product.currency as "SAR" | "EGP" | "USD") || "SAR"}
+                              currency={(product.currency as "SAR" | "EGP" | "USD") || "EGP"}
                               locale={isRtl ? "ar" : "en"}
                               className="text-sm text-muted-foreground line-through"
                             />
@@ -287,7 +287,7 @@ export default function ProductsPage() {
                       {product.basePrice > 0 && (
                         <PriceDisplay
                           amount={product.basePrice}
-                          currency={(product.currency as "SAR" | "EGP" | "USD") || "SAR"}
+                          currency={(product.currency as "SAR" | "EGP" | "USD") || "EGP"}
                           locale={isRtl ? "ar" : "en"}
                           className="text-xl font-bold text-primary"
                         />

@@ -501,7 +501,7 @@ export class PaymentService {
         productType: product.productType || "default",
         isDigitalBook: product.productType === "digital_book",
         originalUnitPrice: unitPrice,
-        originalCurrency: this.normalizeCurrency(product.currency, "SAR"),
+        originalCurrency: this.normalizeCurrency(product.currency, "EGP"),
         variantId: variantId || undefined,
         addonIds: selectedAddons.map((addon) => addon._id?.toString()).filter(Boolean),
         customFields: normalizedCustomFields,

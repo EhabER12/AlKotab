@@ -281,7 +281,7 @@ export default function SettingsDashboardPage() {
   });
 
   const [financeSettings, setFinanceSettings] = useState({
-    baseCurrency: "SAR" as "SAR" | "EGP" | "USD",
+    baseCurrency: "EGP" as "SAR" | "EGP" | "USD",
     exchangeRates: {
       USD: 1,
       SAR: 3.75,
@@ -548,7 +548,7 @@ export default function SettingsDashboardPage() {
 
       if (settings.financeSettings) {
         setFinanceSettings({
-          baseCurrency: settings.financeSettings.baseCurrency || "SAR",
+          baseCurrency: settings.financeSettings.baseCurrency || "EGP",
           exchangeRates: {
             USD: settings.financeSettings.exchangeRates?.USD || 1,
             SAR: settings.financeSettings.exchangeRates?.SAR || 3.75,

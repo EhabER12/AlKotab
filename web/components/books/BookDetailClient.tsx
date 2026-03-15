@@ -37,7 +37,7 @@ export function BookDetailClient({ book, locale }: BookDetailClientProps) {
     const sourceCurrency =
       book.currency === "USD" || book.currency === "EGP" || book.currency === "SAR"
         ? book.currency
-        : "SAR";
+        : "EGP";
     const amount = convert(book.basePrice || 0, sourceCurrency, selectedCurrency);
     return format(amount, selectedCurrency, isRtl ? "ar" : "en");
   }, [book.basePrice, book.currency, convert, format, selectedCurrency, isRtl]);
@@ -46,7 +46,7 @@ export function BookDetailClient({ book, locale }: BookDetailClientProps) {
     const sourceCurrency =
       book.currency === "USD" || book.currency === "EGP" || book.currency === "SAR"
         ? book.currency
-        : "SAR";
+        : "EGP";
     const amount = convert((book.basePrice || 0) * quantity, sourceCurrency, selectedCurrency);
     return format(amount, selectedCurrency, isRtl ? "ar" : "en");
   }, [book.basePrice, book.currency, quantity, convert, format, selectedCurrency, isRtl]);

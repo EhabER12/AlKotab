@@ -23,7 +23,7 @@ const productSchema = new mongoose.Schema(
     gallery: [{ type: String }],
     basePrice: { type: Number, required: true },
     compareAtPrice: { type: Number },
-    currency: { type: String, default: "SAR" },
+    currency: { type: String, default: "EGP" },
     productType: {
       type: String,
       enum: ["default", "digital_book"],

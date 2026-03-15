@@ -16,6 +16,7 @@ import {
   Palette,
   Zap,
 } from "lucide-react";
+import { useCurrencyContext } from "@/contexts/CurrencyContext";
 
 // Icon map for dynamic icon rendering
 const iconMap: Record<string, any> = {
@@ -35,11 +36,19 @@ interface ServiceDetailClientProps {
   locale: string;
 }
 
+const normalizeCurrency = (currency?: string): "SAR" | "EGP" | "USD" => {
+  if (currency === "SAR" || currency === "EGP" || currency === "USD") {
+    return currency;
+  }
+  return "EGP";
+};
+
 export function ServiceDetailClient({
   service,
   locale,
 }: ServiceDetailClientProps) {
   const isRtl = locale === "ar";
+  const { selectedCurrency, convert, format } = useCurrencyContext();
 
   const title = isRtl ? service.title?.ar : service.title?.en;
   const shortDesc = isRtl
@@ -61,6 +70,12 @@ export function ServiceDetailClient({
   }, [rawDescription]);
 
   const ServiceIcon = iconMap[service.icon] || Zap;
+  const formatPrice = (amount: number, currency?: string) =>
+    format(
+      convert(amount, normalizeCurrency(currency), selectedCurrency),
+      selectedCurrency,
+      isRtl ? "ar" : "en"
+    );
 
   return (
     <main className="min-h-screen bg-gray-50" dir={isRtl ? "rtl" : "ltr"}>
@@ -228,10 +243,7 @@ export function ServiceDetailClient({
                         </h3>
                         <div className="text-3xl font-bold mb-4">
                           {tier.price ? (
-                            <>
-                              {tier.price.toLocaleString()}{" "}
-                              <span className="text-sm">{tier.currency}</span>
-                            </>
+                            <>{formatPrice(tier.price, tier.currency)}</>
                           ) : (
                             <span>
                               {isRtl ? "اتصل للسعر" : "Contact for Price"}
@@ -278,8 +290,7 @@ export function ServiceDetailClient({
                   {isRtl ? "السعر الثابت" : "Fixed Price"}
                 </h2>
                 <div className="text-4xl font-bold text-[#FB9903] mb-4">
-                  {service.startingPrice.toLocaleString()}{" "}
-                  <span className="text-lg">SAR</span>
+                  {formatPrice(Number(service.startingPrice || 0), "EGP")}
                 </div>
                 <p className="text-white/80 mb-6 max-w-md mx-auto">
                   {isRtl

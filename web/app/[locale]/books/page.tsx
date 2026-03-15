@@ -25,7 +25,7 @@ const getLocalizedText = (
 
 const normalizeCurrency = (currency?: string): "SAR" | "EGP" | "USD" => {
   if (currency === "USD" || currency === "EGP" || currency === "SAR") return currency;
-  return "SAR";
+  return "EGP";
 };
 
 export default function BooksPage() {

@@ -665,7 +665,7 @@ const financeSettingsSchema = new mongoose.Schema({
   baseCurrency: {
     type: String,
     enum: ["SAR", "EGP", "USD"],
-    default: "SAR",
+    default: "EGP",
   },
   exchangeRates: {
     USD: { type: Number, default: 1 },
@@ -1017,7 +1017,7 @@ const settingsSchema = new mongoose.Schema(
     financeSettings: {
       type: financeSettingsSchema,
       default: () => ({
-        baseCurrency: "SAR",
+        baseCurrency: "EGP",
         exchangeRates: {
           USD: 1,
           SAR: 3.75,

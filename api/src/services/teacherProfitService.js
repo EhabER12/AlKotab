@@ -208,7 +208,7 @@ export class TeacherProfitService {
       totalProfit: courseSalesStats.totalProfit + subscriptionStats.totalProfit,
       totalTransactions: courseSalesStats.count + subscriptionStats.count,
       recentTransactions,
-      currency: "SAR", // Primary currency
+      currency: "EGP", // Primary currency
     };
   }
 

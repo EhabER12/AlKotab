@@ -145,7 +145,7 @@ export function ServiceBasicInfo({
       {/* Fixed Price Input */}
       {formData.pricingType === "fixed" && (
         <div>
-          <Label>{t("admin.services.fixedPrice")} (SAR)</Label>
+          <Label>{t("admin.services.fixedPrice")} (EGP)</Label>
           <Input
             type="number"
             value={formData.startingPrice}

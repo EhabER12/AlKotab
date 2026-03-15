@@ -15,9 +15,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
-import { SarIcon } from "@/components/ui/sar-icon";
 import { useAppDispatch } from "@/store/hooks";
 import { addToCart } from "@/store/slices/cartSlice";
+import { useCurrencyContext } from "@/contexts/CurrencyContext";
 import { useTranslations } from "next-intl";
 import toast from "react-hot-toast";
 import {
@@ -41,6 +41,13 @@ const getLocalizedText = (
   return text[locale as "ar" | "en"] || text.en || text.ar || "";
 };
 
+const normalizeCurrency = (currency?: string): "SAR" | "EGP" | "USD" => {
+  if (currency === "SAR" || currency === "EGP" || currency === "USD") {
+    return currency;
+  }
+  return "EGP";
+};
+
 export function ProductDetailClient({
   product,
   locale,
@@ -48,6 +55,7 @@ export function ProductDetailClient({
   const isRtl = locale === "ar";
   const t = useTranslations();
   const dispatch = useAppDispatch();
+  const { selectedCurrency, convert, format } = useCurrencyContext();
 
   // State
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(
@@ -58,6 +66,7 @@ export function ProductDetailClient({
   const [selectedAddons, setSelectedAddons] = useState<ProductAddon[]>([]);
   const [quantity, setQuantity] = useState(1);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const productCurrency = normalizeCurrency(product.currency);
 
   // Ref for options section
   const optionsSectionRef = useRef<HTMLDivElement>(null);
@@ -91,6 +100,13 @@ export function ProductDetailClient({
     const addonsTotal = selectedAddons.reduce((sum, a) => sum + a.price, 0);
     return (basePrice + addonsTotal) * quantity;
   };
+
+  const formatPrice = (amount: number) =>
+    format(
+      convert(amount, productCurrency, selectedCurrency),
+      selectedCurrency,
+      isRtl ? "ar" : "en"
+    );
 
   // Add to cart
   const handleAddToCart = () => {
@@ -251,15 +267,13 @@ export function ProductDetailClient({
 
             {/* Price */}
             <div className="flex items-baseline gap-3">
-              <span className="text-3xl font-bold text-primary inline-flex items-center gap-1">
-                {selectedVariant?.price ?? product.basePrice}
-                <SarIcon size={40} className="text-primary" />
+              <span className="text-3xl font-bold text-primary">
+                {formatPrice(selectedVariant?.price ?? product.basePrice ?? 0)}
               </span>
               {product.compareAtPrice &&
                 product.compareAtPrice > product.basePrice && (
-                  <span className="text-xl text-muted-foreground line-through inline-flex items-center gap-1">
-                    {product.compareAtPrice}
-                    <SarIcon size={30} className="text-muted-foreground" />
+                  <span className="text-xl text-muted-foreground line-through">
+                    {formatPrice(product.compareAtPrice)}
                   </span>
                 )}
             </div>
@@ -309,9 +323,8 @@ export function ProductDetailClient({
                               <Check className="h-5 w-5 text-primary" />
                             )}
                           </div>
-                          <span className="text-sm text-primary font-semibold inline-flex items-center gap-1">
-                            {variant.price}{" "}
-                            <SarIcon size={30} className="text-primary" />
+                          <span className="text-sm text-primary font-semibold">
+                            {formatPrice(Number(variant.price || 0))}
                           </span>
                         </button>
                       );
@@ -352,9 +365,8 @@ export function ProductDetailClient({
                               {getLocalizedText(addon.name, locale)}
                             </span>
                           </div>
-                          <span className="text-primary font-semibold inline-flex items-center gap-1">
-                            +{addon.price}{" "}
-                            <SarIcon size={30} className="text-primary" />
+                          <span className="text-primary font-semibold">
+                            +{formatPrice(Number(addon.price || 0))}
                           </span>
                         </div>
                       );
@@ -398,9 +410,8 @@ export function ProductDetailClient({
                 <span className="font-medium">
                   {t("products.total") || "Total"}
                 </span>
-                <span className="text-2xl font-bold text-primary inline-flex items-center gap-1">
-                  {calculateTotal()}{" "}
-                  <SarIcon size={40} className="text-primary" />
+                <span className="text-2xl font-bold text-primary">
+                  {formatPrice(calculateTotal())}
                 </span>
               </div>
               <Button
@@ -439,9 +450,8 @@ export function ProductDetailClient({
               <p className="text-xs text-muted-foreground">
                 {t("products.total") || "Total"}
               </p>
-              <p className="text-xl font-bold text-primary inline-flex items-center gap-1">
-                {calculateTotal()}{" "}
-                <SarIcon size={40} className="text-primary" />
+              <p className="text-xl font-bold text-primary">
+                {formatPrice(calculateTotal())}
               </p>
             </div>
 

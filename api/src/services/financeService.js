@@ -438,7 +438,7 @@ export class FinanceService {
     }
 
     return {
-      baseCurrency: settings.financeSettings?.baseCurrency || "SAR",
+      baseCurrency: settings.financeSettings?.baseCurrency || "EGP",
       exchangeRates: settings.financeSettings?.exchangeRates || {
         USD: 1,
         SAR: 3.75,

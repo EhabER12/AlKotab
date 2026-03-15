@@ -210,7 +210,7 @@ export default function DashboardPage() {
                     {formatMoney(
                       toBaseCurrency(
                         stats?.revenue?.total || totalRevenue,
-                        stats?.revenue?.currency || "SAR"
+                        stats?.revenue?.currency || "EGP"
                       )
                     )}
                   </div>
@@ -219,14 +219,14 @@ export default function DashboardPage() {
                     {formatMoney(
                       toBaseCurrency(
                         stats?.revenue?.today || 0,
-                        stats?.revenue?.currency || "SAR"
+                        stats?.revenue?.currency || "EGP"
                       )
                     )}{" "}
                     | {isRtl ? "الأسبوع" : "Week"}:{" "}
                     {formatMoney(
                       toBaseCurrency(
                         stats?.revenue?.week || 0,
-                        stats?.revenue?.currency || "SAR"
+                        stats?.revenue?.currency || "EGP"
                       )
                     )}
                   </p>
@@ -271,7 +271,7 @@ export default function DashboardPage() {
                   <p className="text-xs text-orange-600">
                     {t("admin.dashboard.stats.lostRevenue")}:{" "}
                     {formatMoney(
-                      toBaseCurrency(stats?.carts?.potentialRevenue || 0, "SAR")
+                      toBaseCurrency(stats?.carts?.potentialRevenue || 0, "EGP")
                     )}
                     | {t("admin.dashboard.stats.conversionRate")}:{" "}
                     {stats?.carts?.conversionRate || 0}%

@@ -57,8 +57,8 @@ const currencyConfigs: Record<CurrencyCode, CurrencyConfig> = {
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
 
 export function CurrencyProvider({ children }: { children: ReactNode }) {
-  const [selectedCurrency, setSelectedCurrencyState] = useState<CurrencyCode>("SAR");
-  const [baseCurrency, setBaseCurrency] = useState<CurrencyCode>("SAR");
+  const [selectedCurrency, setSelectedCurrencyState] = useState<CurrencyCode>("EGP");
+  const [baseCurrency, setBaseCurrency] = useState<CurrencyCode>("EGP");
   const [exchangeRates, setExchangeRates] = useState<ExchangeRates>({
     USD: 1,
     SAR: 3.75,
@@ -74,7 +74,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
         const financeSettings = response.data?.data?.financeSettings;
 
         if (financeSettings) {
-          setBaseCurrency(financeSettings.baseCurrency || "SAR");
+          setBaseCurrency(financeSettings.baseCurrency || "EGP");
           setExchangeRates(financeSettings.exchangeRates || exchangeRates);
         }
       } catch (error) {
@@ -93,8 +93,8 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     if (saved && (saved === "SAR" || saved === "EGP" || saved === "USD")) {
       setSelectedCurrencyState(saved as CurrencyCode);
     } else {
-      // Default to base currency
-      setSelectedCurrencyState(baseCurrency);
+      // Site-wide storefront default is EGP unless the user picked another currency.
+      setSelectedCurrencyState("EGP");
     }
   }, [baseCurrency]);
 

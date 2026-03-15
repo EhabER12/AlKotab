@@ -264,7 +264,7 @@ export class BookController {
         categoryId: data.categoryId || undefined,
         basePrice: price,
         compareAtPrice: Number(data.compareAtPrice) || undefined,
-        currency: data.currency || "SAR",
+        currency: data.currency || "EGP",
         coverImage: coverFile ? `/uploads/book-covers/${coverFile.filename}` : "",
         bookCoverPath: coverFile
           ? `/uploads/book-covers/${coverFile.filename}`

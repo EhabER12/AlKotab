@@ -71,9 +71,9 @@ const getLocalizedText = (
 };
 
 const getCartItemCurrency = (item: CartItem | undefined): string => {
-  if (!item) return "SAR";
-  if (item.itemType === "course") return item.course?.currency || "SAR";
-  return item.product?.currency || "SAR";
+  if (!item) return "EGP";
+  if (item.itemType === "course") return item.course?.currency || "EGP";
+  return item.product?.currency || "EGP";
 };
 
 type CurrencyCode = "SAR" | "EGP" | "USD";
@@ -82,7 +82,7 @@ const normalizeCurrency = (currency?: string): CurrencyCode => {
   if (currency === "EGP" || currency === "USD" || currency === "SAR") {
     return currency;
   }
-  return "SAR";
+  return "EGP";
 };
 
 const getCartItemUnitPrice = (item: CartItem): number => {

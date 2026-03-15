@@ -6,10 +6,10 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { ShoppingBag, ArrowUpRight, Sparkles } from "lucide-react";
-import { SarIcon } from "@/components/ui/sar-icon";
 import { useAppDispatch } from "@/store/hooks";
 import { addToCart } from "@/store/slices/cartSlice";
 import { ProductOptionsModal } from "@/components/products/ProductOptionsModal";
+import { useCurrencyContext } from "@/contexts/CurrencyContext";
 import { useTranslations } from "next-intl";
 import toast from "react-hot-toast";
 
@@ -54,6 +54,13 @@ const getLocalizedText = (
   return text[locale as "ar" | "en"] || text.en || text.ar || "";
 };
 
+const normalizeCurrency = (currency?: string): "SAR" | "EGP" | "USD" => {
+  if (currency === "SAR" || currency === "EGP" || currency === "USD") {
+    return currency;
+  }
+  return "EGP";
+};
+
 interface ProductsSectionProps {
   locale: string;
   products?: Product[];
@@ -69,6 +76,7 @@ export function ProductsSection({
   const isRtl = locale === "ar";
   const dispatch = useAppDispatch();
   const t = useTranslations("landing.products");
+  const { selectedCurrency, convert, format } = useCurrencyContext();
 
   // Category filter state
   const [activeCategory, setActiveCategory] = useState<string>("all");
@@ -142,6 +150,13 @@ export function ProductsSection({
     activeCategory === "all"
       ? products.slice(0, 8)
       : products.filter((p) => getCategoryId(p) === activeCategory).slice(0, 8);
+
+  const formatPrice = (amount: number, currency?: string) =>
+    format(
+      convert(amount, normalizeCurrency(currency), selectedCurrency),
+      selectedCurrency,
+      isRtl ? "ar" : "en"
+    );
 
   // Don't render if no products
   if (!products || products.length === 0) {
@@ -290,12 +305,12 @@ export function ProductsSection({
                   {/* Price */}
                   <div className="flex items-center gap-2 mb-3">
                     {hasDiscount && (
-                      <span className="text-sm text-gray-400 line-through flex items-center gap-1">
-                        <SarIcon size={30} /> {product.compareAtPrice}
+                      <span className="text-sm text-gray-400 line-through">
+                        {formatPrice(product.compareAtPrice!, product.currency)}
                       </span>
                     )}
-                    <span className="text-lg font-bold text-primary flex items-center gap-1">
-                      <SarIcon size={35} /> {product.basePrice}
+                    <span className="text-lg font-bold text-primary">
+                      {formatPrice(product.basePrice, product.currency)}
                     </span>
                   </div>
 

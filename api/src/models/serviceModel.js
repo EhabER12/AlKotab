@@ -34,7 +34,7 @@ const pricingTierSchema = new mongoose.Schema(
   {
     name: bilingualTextSchema,
     price: { type: Number }, // null for "Request Quote"
-    currency: { type: String, default: "SAR" },
+    currency: { type: String, default: "EGP" },
     description: bilingualTextSchema,
     features: [String],
     isPopular: { type: Boolean, default: false },

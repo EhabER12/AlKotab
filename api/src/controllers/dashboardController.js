@@ -211,7 +211,7 @@ export const getDashboardStats = async (req, res, next) => {
           week: revenueWeek[0]?.total || 0,
           month: revenueMonth[0]?.total || 0,
           total: revenueTotal[0]?.total || 0,
-          currency: "SAR",
+          currency: "EGP",
           history: revenueChartData,
         },
         orders: {
@@ -315,7 +315,7 @@ export const getRecentActivity = async (req, res, next) => {
       Payment.find()
         .sort({ createdAt: -1 })
         .limit(limit)
-        .select("amount status billingInfo createdAt")
+        .select("amount status billingInfo createdAt currency")
         .lean(),
       Review.find()
         .sort({ createdAt: -1 })
@@ -333,7 +333,7 @@ export const getRecentActivity = async (req, res, next) => {
     const activities = [
       ...recentPayments.map((p) => ({
         type: "payment",
-        title: `New payment: ${p.amount} SAR`,
+        title: `New payment: ${p.amount} ${p.currency || "EGP"}`,
         subtitle: p.billingInfo?.name || "Guest",
         status: p.status,
         timestamp: p.createdAt,
@@ -564,7 +564,7 @@ export const getTeacherStats = async (req, res, next) => {
         totalProfit: 0,
         totalTransactions: 0,
         recentTransactions: [],
-        currency: "SAR",
+        currency: "EGP",
       };
     }
 
