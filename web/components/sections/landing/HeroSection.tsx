@@ -30,10 +30,11 @@ export function HeroSection({
   const heroRef = useRef<HTMLDivElement>(null);
   const t = useTranslations("landing.hero");
   const isRtl = locale === "ar";
+  const localeKey = isRtl ? "ar" : "en";
   const ArrowIcon = isRtl ? ArrowLeft : ArrowRight;
 
   const heroSettings = settings?.homepageSections?.hero;
-  const showDynamic = heroSettings?.isEnabled;
+  const showDynamic = heroSettings?.isEnabled !== false;
   const heroTextSizes = {
     ...DEFAULT_HERO_TEXT_SIZES,
     ...(heroSettings?.textSizes || {}),
@@ -41,38 +42,35 @@ export function HeroSection({
   const titleFontSize = `clamp(${heroTextSizes.titleMobile}px, 6vw, ${heroTextSizes.titleDesktop}px)`;
   const subtitleFontSize = `clamp(${heroTextSizes.subtitleMobile}px, 2.5vw, ${heroTextSizes.subtitleDesktop}px)`;
 
+  const getLocalizedHeroValue = (value?: { ar?: string; en?: string }) =>
+    value?.[localeKey]?.trim() || "";
+
   const title = showDynamic
-    ? isRtl
-      ? heroSettings.title.ar
-      : heroSettings.title.en
+    ? getLocalizedHeroValue(heroSettings?.title) || t("title1")
     : t("title1");
 
   const subtitle = showDynamic
-    ? isRtl
-      ? heroSettings.subtitle.ar
-      : heroSettings.subtitle.en
+    ? getLocalizedHeroValue(heroSettings?.subtitle) || t("subtitle")
     : t("subtitle");
 
   const content = showDynamic
-    ? isRtl
-      ? heroSettings.content.ar
-      : heroSettings.content.en
+    ? getLocalizedHeroValue(heroSettings?.content) || t("subtitleHighlight")
     : t("subtitleHighlight");
 
   const ctaText = showDynamic
-    ? isRtl
-      ? heroSettings.buttonText.ar
-      : heroSettings.buttonText.en
+    ? getLocalizedHeroValue(heroSettings?.buttonText) || t("cta")
     : t("cta");
 
-  const ctaLink = showDynamic ? heroSettings.buttonLink : "/forms/consultation-request";
+  const ctaLink =
+    showDynamic && heroSettings?.buttonLink
+      ? heroSettings.buttonLink
+      : "/forms/consultation-request";
 
   // Badge from settings or fallback to translation
-  const badge = showDynamic && heroSettings?.badge
-    ? isRtl
-      ? heroSettings.badge.ar || t("badge")
-      : heroSettings.badge.en || t("badge")
-    : t("badge");
+  const badge =
+    showDynamic && heroSettings?.badge
+      ? getLocalizedHeroValue(heroSettings.badge) || t("badge")
+      : t("badge");
 
   useGSAP(() => {
     if (!heroRef.current) return;

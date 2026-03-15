@@ -47,9 +47,16 @@ export default function CoursesPage() {
   // Get courses page hero settings
   const heroSettings = publicSettings?.coursesPageHero;
   const isHeroEnabled = heroSettings?.isEnabled !== false;
-  const heroBadge = heroSettings?.badge?.[isRtl ? "ar" : "en"] || (isRtl ? "دوراتنا التعليمية" : "Our Educational Courses");
-  const heroTitle = heroSettings?.title?.[isRtl ? "ar" : "en"] || (isRtl ? "ابدأ رحلتك في تحفيظ القرآن الكريم" : "Start Your Quran Memorization Journey");
-  const heroSubtitle = heroSettings?.subtitle?.[isRtl ? "ar" : "en"] || (isRtl ? "مع دوراتنا المتخصصة" : "With Our Specialized Courses");
+  const heroLocale = isRtl ? "ar" : "en";
+  const heroBadge =
+    heroSettings?.badge?.[heroLocale]?.trim() ||
+    (isRtl ? "دوراتنا التعليمية" : "Our Educational Courses");
+  const heroTitle =
+    heroSettings?.title?.[heroLocale]?.trim() ||
+    (isRtl ? "ابدأ رحلتك في تحفيظ القرآن الكريم" : "Start Your Quran Memorization Journey");
+  const heroSubtitle =
+    heroSettings?.subtitle?.[heroLocale]?.trim() ||
+    (isRtl ? "مع دوراتنا المتخصصة" : "With Our Specialized Courses");
 
   // Debounce search
   useEffect(() => {

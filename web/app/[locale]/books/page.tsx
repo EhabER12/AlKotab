@@ -23,6 +23,16 @@ const getLocalizedText = (
   return text[locale as "ar" | "en"] || text.en || text.ar || "";
 };
 
+const getLocalizedHeroText = (
+  text: { ar?: string; en?: string } | string | undefined,
+  locale: string
+): string => {
+  if (!text) return "";
+  if (typeof text === "string") return text.trim();
+
+  return text[locale as "ar" | "en"]?.trim() || "";
+};
+
 const normalizeCurrency = (currency?: string): "SAR" | "EGP" | "USD" => {
   if (currency === "USD" || currency === "EGP" || currency === "SAR") return currency;
   return "EGP";
@@ -127,10 +137,10 @@ export default function BooksPage() {
         <div className="container mx-auto px-4 text-center">
           <BookOpen className="mx-auto mb-4 h-16 w-16 opacity-80" />
           <h1 className="mb-3 text-4xl font-bold">
-            {getLocalizedText(booksPageHero.title, locale) || "Books"}
+            {getLocalizedHeroText(booksPageHero.title, locale) || "Books"}
           </h1>
           <p className="text-lg opacity-90">
-            {getLocalizedText(booksPageHero.subtitle, locale) ||
+            {getLocalizedHeroText(booksPageHero.subtitle, locale) ||
               "A curated collection of digital books ready for purchase"}
           </p>
         </div>

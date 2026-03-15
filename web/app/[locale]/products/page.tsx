@@ -39,6 +39,16 @@ const getLocalizedText = (
   return text[locale as "ar" | "en"] || text.en || text.ar || "";
 };
 
+const getLocalizedHeroText = (
+  text: { ar?: string; en?: string } | string | undefined,
+  locale: string
+): string => {
+  if (!text) return "";
+  if (typeof text === "string") return text.trim();
+
+  return text[locale as "ar" | "en"]?.trim() || "";
+};
+
 export default function ProductsPage() {
   const params = useParams();
   const locale = (params?.locale as string) || "ar";
@@ -67,14 +77,14 @@ export default function ProductsPage() {
   const productsPageHero = publicSettings?.productsPageHero;
   const heroEnabled = productsPageHero?.isEnabled !== false;
   const heroBadge =
-    getLocalizedText(productsPageHero?.badge as any, locale) ||
+    getLocalizedHeroText(productsPageHero?.badge as any, locale) ||
     (isRtl ? "منتجاتنا الرقمية" : "Our Digital Products");
   const heroTitle =
-    getLocalizedText(productsPageHero?.title as any, locale) ||
+    getLocalizedHeroText(productsPageHero?.title as any, locale) ||
     (t("products.title") as string) ||
     "Our Digital Products";
   const heroSubtitle =
-    getLocalizedText(productsPageHero?.subtitle as any, locale) ||
+    getLocalizedHeroText(productsPageHero?.subtitle as any, locale) ||
     (t("products.subtitle") as string) ||
     "Premium digital services and products for your business";
   const heroStyle =
