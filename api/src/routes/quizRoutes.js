@@ -47,31 +47,31 @@ router.get(
 router.post(
   "/",
   protect,
-  authorize("admin", "teacher"),
+  authorize("admin", "moderator", "teacher"),
   createQuiz
 );
 router.put(
   "/:id",
   protect,
-  authorize("admin", "teacher"),
+  authorize("admin", "moderator", "teacher"),
   updateQuiz
 );
 router.delete(
   "/:id",
   protect,
-  authorize("admin", "teacher"),
+  authorize("admin", "moderator", "teacher"),
   deleteQuiz
 );
 router.get(
   "/:id/statistics",
   protect,
-  authorize("admin", "teacher"),
+  authorize("admin", "moderator", "teacher"),
   getQuizStatistics
 );
 router.get(
   "/:quizId/attempts/all",
   protect,
-  authorize("admin", "teacher"),
+  authorize("admin", "moderator", "teacher"),
   getAllQuizAttempts
 );
 

@@ -192,8 +192,11 @@ export class CourseService {
     }
 
     // Check if user is teacher or admin
-    if (!["teacher", "admin"].includes(user.role)) {
-      throw new ApiError(403, "Only teachers and admins can create courses");
+    if (!["teacher", "admin", "moderator"].includes(user.role)) {
+      throw new ApiError(
+        403,
+        "Only teachers, moderators, and admins can create courses"
+      );
     }
 
     courseData.instructorId = userId;
@@ -225,7 +228,7 @@ export class CourseService {
 
     // Check permissions
     const isOwner = course.instructorId.toString() === userId;
-    const isAdmin = user.role === "admin";
+    const isAdmin = user.role === "admin" || user.role === "moderator";
 
     if (!isOwner && !isAdmin) {
       throw new ApiError(403, "Not authorized to update this course");
@@ -253,7 +256,7 @@ export class CourseService {
 
     const user = await User.findById(userId);
     const isOwner = course.instructorId.toString() === userId;
-    const isAdmin = user.role === "admin";
+    const isAdmin = user.role === "admin" || user.role === "moderator";
 
     if (!isOwner && !isAdmin) {
       throw new ApiError(403, "Not authorized to delete this course");

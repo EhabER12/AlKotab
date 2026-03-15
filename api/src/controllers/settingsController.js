@@ -1,10 +1,20 @@
 import { SettingsService } from "../services/settingsService.js";
 import emailTemplateService from "../services/emailTemplateService.js";
+import { ApiError } from "../utils/apiError.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import { EmailService } from "../services/emailService.js";
 
 const settingsService = new SettingsService();
 const emailService = new EmailService();
+const MODERATOR_ALLOWED_SETTINGS_FIELDS = ["subscriptionTeachers"];
+
+const pickAllowedSettingsFields = (settingsData = {}, allowedFields = []) =>
+  allowedFields.reduce((acc, field) => {
+    if (Object.prototype.hasOwnProperty.call(settingsData, field)) {
+      acc[field] = settingsData[field];
+    }
+    return acc;
+  }, {});
 
 // @desc    Get website settings
 // @route   GET /api/settings
@@ -43,9 +53,24 @@ export const getPublicSettings = async (req, res, next) => {
 // @access  Private/Admin
 export const updateSettings = async (req, res, next) => {
   try {
-    const settingsData = req.body;
+    let settingsData = req.body;
     const files = req.files || {};
     const userId = req.user._id;
+    const userRole = req.user.role;
+
+    if (userRole === "moderator") {
+      settingsData = pickAllowedSettingsFields(
+        settingsData,
+        MODERATOR_ALLOWED_SETTINGS_FIELDS
+      );
+
+      if (Object.keys(settingsData).length === 0) {
+        throw new ApiError(
+          403,
+          "Moderators can only update subscription teachers"
+        );
+      }
+    }
 
     const settings = await settingsService.updateSettings(
       settingsData,

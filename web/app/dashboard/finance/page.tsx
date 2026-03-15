@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -67,10 +68,13 @@ import {
   TRANSACTION_CATEGORIES,
 } from "@/store/services/financeService";
 import { useToast } from "@/components/ui/use-toast";
+import { isAdmin, isAuthenticated } from "@/store/services/authService";
 
 export default function FinanceDashboardPage() {
+  const router = useRouter();
   const { t, isRtl, locale } = useAdminLocale();
   const { toast } = useToast();
+  const hasAdminAccess = isAuthenticated() && isAdmin();
 
   const [isLoading, setIsLoading] = useState(true);
   const [summary, setSummary] = useState<FinanceSummary | null>(null);
@@ -140,6 +144,10 @@ export default function FinanceDashboardPage() {
   const [payoutProofFile, setPayoutProofFile] = useState<File | null>(null);
   const [showPayoutProofDialog, setShowPayoutProofDialog] = useState(false);
   const [payoutProofPreviewUrl, setPayoutProofPreviewUrl] = useState<string | null>(null);
+  const [showTransactionDetailsDialog, setShowTransactionDetailsDialog] =
+    useState(false);
+  const [selectedTransaction, setSelectedTransaction] =
+    useState<FinanceTransaction | null>(null);
 
   // Display currency for all amounts
   const [displayCurrency, setDisplayCurrency] = useState<"SAR" | "EGP" | "USD">(
@@ -217,6 +225,18 @@ export default function FinanceDashboardPage() {
     toast,
     isRtl,
   ]);
+
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      router.push("/login");
+      return;
+    }
+
+    if (!isAdmin()) {
+      router.push("/dashboard");
+    }
+  }, [router]);
+
   const fetchTeacherPayouts = useCallback(async () => {
     setIsPayoutsLoading(true);
     try {
@@ -260,6 +280,10 @@ export default function FinanceDashboardPage() {
 
   // Fetch settings on mount
   useEffect(() => {
+    if (!hasAdminAccess) {
+      return;
+    }
+
     const fetchSettings = async () => {
       try {
         const res = await axiosInstance.get("/finance/settings");
@@ -282,7 +306,7 @@ export default function FinanceDashboardPage() {
     };
 
     fetchSettings();
-  }, []);
+  }, [hasAdminAccess]);
 
   // Handle currency change and persist it
   const handleCurrencyChange = async (currency: "SAR" | "EGP" | "USD") => {
@@ -304,11 +328,19 @@ export default function FinanceDashboardPage() {
   };
 
   useEffect(() => {
+    if (!hasAdminAccess) {
+      return;
+    }
+
     fetchData();
-  }, [fetchData]);
+  }, [fetchData, hasAdminAccess]);
   useEffect(() => {
+    if (!hasAdminAccess) {
+      return;
+    }
+
     fetchTeacherPayouts();
-  }, [fetchTeacherPayouts]);
+  }, [fetchTeacherPayouts, hasAdminAccess]);
 
 
   const handleAddTransaction = async () => {
@@ -566,6 +598,169 @@ export default function FinanceDashboardPage() {
     return name || teacher.email || "-";
   };
 
+  const getLocalizedValue = (value: any): string => {
+    if (!value) return "";
+    if (typeof value === "string") return value;
+    return (isRtl ? value.ar : value.en) || value.en || value.ar || "";
+  };
+
+  const getReferencedPayment = (tx: FinanceTransaction) => {
+    const referenceId = tx.reference?.id;
+    if (!referenceId || typeof referenceId !== "object" || Array.isArray(referenceId)) {
+      return null;
+    }
+
+    return referenceId;
+  };
+
+  const getSourceLabel = (source: FinanceTransaction["source"]) => {
+    switch (source) {
+      case "payment_auto":
+        return isRtl ? "تلقائي (شراء)" : "Auto (Purchase)";
+      case "refund_auto":
+        return isRtl ? "تلقائي (استرداد)" : "Auto (Refund)";
+      case "system":
+        return isRtl ? "نظام" : "System";
+      default:
+        return isRtl ? "يدوي" : "Manual";
+    }
+  };
+
+  const getTransactionCustomer = (tx: FinanceTransaction) => {
+    const payment = getReferencedPayment(tx);
+
+    return {
+      name: payment?.billingInfo?.name || tx.metadata?.customerName || "-",
+      email: payment?.billingInfo?.email || tx.metadata?.customerEmail || "-",
+      phone: payment?.billingInfo?.phone || "-",
+      city: payment?.billingInfo?.city || "",
+      country: payment?.billingInfo?.country || "",
+    };
+  };
+
+  const getTransactionPurchaseType = (tx: FinanceTransaction) => {
+    const payment = getReferencedPayment(tx);
+    const purchaseType = tx.metadata?.purchaseType;
+
+    if (purchaseType === "subscription" || payment?.packageId || payment?.studentMemberId) {
+      return isRtl ? "اشتراك" : "Subscription";
+    }
+
+    if (purchaseType === "service" || payment?.serviceId) {
+      return isRtl ? "خدمة" : "Service";
+    }
+
+    if (purchaseType === "course" || payment?.courseId) {
+      return isRtl ? "دورة" : "Course";
+    }
+
+    return isRtl ? "منتج" : "Product";
+  };
+
+  const getTransactionItems = (tx: FinanceTransaction) => {
+    const payment = getReferencedPayment(tx);
+    const cartItems = Array.isArray(payment?.cartSessionId?.cartItems)
+      ? payment.cartSessionId.cartItems
+      : [];
+
+    if (cartItems.length > 0) {
+      return cartItems.map((item: any, index: number) => {
+        const quantity = Number(item?.quantity || 1);
+        const unitPrice = Number(item?.unitPrice || item?.price || 0);
+        const totalPrice = Number(item?.totalPrice || unitPrice * quantity);
+
+        return {
+          id: `${item?._id || item?.id || "cart"}-${index}`,
+          name:
+            getLocalizedValue(item?.productId?.name) ||
+            getLocalizedValue(item?.productName) ||
+            item?.name ||
+            (isRtl ? "منتج" : "Product"),
+          itemType: item?.itemType,
+          quantity,
+          unitPrice,
+          totalPrice,
+          currency: payment?.cartSessionId?.currency || payment?.currency || tx.currency,
+          variantName: getLocalizedValue(item?.variantName),
+        };
+      });
+    }
+
+    const paymentItems = Array.isArray(payment?.paymentDetails?.items)
+      ? payment.paymentDetails.items
+      : Array.isArray(tx.metadata?.itemsSummary)
+        ? tx.metadata.itemsSummary
+        : [];
+
+    return paymentItems.map((item: any, index: number) => {
+      const quantity = Number(item?.quantity || 1);
+      const unitPrice = Number(item?.unitPrice || item?.price || 0);
+      const totalPrice = Number(item?.totalPrice || unitPrice * quantity);
+
+      return {
+        id: `${item?.itemId || "payment"}-${index}`,
+        name:
+          getLocalizedValue(item?.name) ||
+          getLocalizedValue(item?.productName) ||
+          (item?.itemType === "course"
+            ? isRtl
+              ? "دورة"
+              : "Course"
+            : isRtl
+              ? "منتج"
+              : "Product"),
+        itemType: item?.itemType,
+        quantity,
+        unitPrice,
+        totalPrice,
+        currency: payment?.currency || tx.currency,
+        variantName: getLocalizedValue(item?.variantName),
+      };
+    });
+  };
+
+  const getTransactionRelatedEntities = (tx: FinanceTransaction) => {
+    const payment = getReferencedPayment(tx);
+    if (!payment) return [];
+
+    const entities = [];
+
+    if (payment.courseId) {
+      entities.push({
+        label: isRtl ? "الدورة" : "Course",
+        value: getLocalizedValue(payment.courseId.title) || "-",
+      });
+    }
+
+    if (payment.packageId) {
+      entities.push({
+        label: isRtl ? "الباقة" : "Package",
+        value: getLocalizedValue(payment.packageId.name) || "-",
+      });
+    }
+
+    if (payment.productId) {
+      entities.push({
+        label: isRtl ? "المنتج" : "Product",
+        value: getLocalizedValue(payment.productId.name) || "-",
+      });
+    }
+
+    if (payment.serviceId) {
+      entities.push({
+        label: isRtl ? "الخدمة" : "Service",
+        value: getLocalizedValue(payment.serviceId.title) || "-",
+      });
+    }
+
+    return entities;
+  };
+
+  const openTransactionDetails = (tx: FinanceTransaction) => {
+    setSelectedTransaction(tx);
+    setShowTransactionDetailsDialog(true);
+  };
+
 
   // Get all unique categories from transactions for the filter
   const allCategories = Array.from(
@@ -668,6 +863,10 @@ export default function FinanceDashboardPage() {
     dateRange.endDate ||
     amountRange.min ||
     amountRange.max;
+
+  if (!hasAdminAccess) {
+    return null;
+  }
 
   const resetPaginationPage = () => {
     setPagination((prev) => ({ ...prev, page: 1 }));
@@ -1699,7 +1898,11 @@ export default function FinanceDashboardPage() {
                   {filteredTransactions.map((tx) => {
                     const amountForDisplay = Math.abs(tx.amount);
                     return (
-                      <TableRow key={tx.id}>
+                      <TableRow
+                        key={tx.id}
+                        className="cursor-pointer hover:bg-muted/40"
+                        onClick={() => openTransactionDetails(tx)}
+                      >
                       <TableCell className="whitespace-nowrap">
                         {new Date(tx.transactionDate).toLocaleDateString(
                           isRtl ? "ar-SA" : "en-US"
@@ -1787,6 +1990,269 @@ export default function FinanceDashboardPage() {
           )}
         </CardContent>
       </Card>
+      <Dialog
+        open={showTransactionDetailsDialog}
+        onOpenChange={setShowTransactionDetailsDialog}
+      >
+        <DialogContent className="max-w-3xl" dir={isRtl ? "rtl" : "ltr"}>
+          <DialogHeader>
+            <DialogTitle className="text-start">
+              {isRtl ? "تفاصيل المعاملة" : "Transaction Details"}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedTransaction && (
+            <div className="space-y-6">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-lg border p-4">
+                  <h3 className="mb-3 font-semibold">
+                    {isRtl ? "بيانات العملية" : "Transaction Info"}
+                  </h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between gap-3">
+                      <span className="text-muted-foreground">
+                        {isRtl ? "المرجع" : "Reference"}
+                      </span>
+                      <span className="font-mono">
+                        {selectedTransaction.reference?.displayId ||
+                          selectedTransaction.id}
+                      </span>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <span className="text-muted-foreground">
+                        {isRtl ? "التاريخ" : "Date"}
+                      </span>
+                      <span>
+                        {new Date(selectedTransaction.transactionDate).toLocaleString(
+                          isRtl ? "ar-SA" : "en-US"
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <span className="text-muted-foreground">
+                        {isRtl ? "الفئة" : "Category"}
+                      </span>
+                      <span>
+                        {translateCategory(selectedTransaction.category || "")}
+                      </span>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <span className="text-muted-foreground">
+                        {isRtl ? "المصدر" : "Source"}
+                      </span>
+                      <span>{getSourceLabel(selectedTransaction.source)}</span>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <span className="text-muted-foreground">
+                        {isRtl ? "القيمة" : "Amount"}
+                      </span>
+                      <span className="font-semibold">
+                        {formatCurrency(
+                          Math.abs(selectedTransaction.amount),
+                          selectedTransaction.currency
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border p-4">
+                  <h3 className="mb-3 font-semibold">
+                    {isRtl ? "بيانات الشراء" : "Purchase Info"}
+                  </h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between gap-3">
+                      <span className="text-muted-foreground">
+                        {isRtl ? "نوع الشراء" : "Purchase Type"}
+                      </span>
+                      <span>{getTransactionPurchaseType(selectedTransaction)}</span>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <span className="text-muted-foreground">
+                        {isRtl ? "طريقة الدفع" : "Payment Method"}
+                      </span>
+                      <span>
+                        {getReferencedPayment(selectedTransaction)?.paymentMethod ||
+                          selectedTransaction.metadata?.paymentMethod ||
+                          "-"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <span className="text-muted-foreground">
+                        {isRtl ? "المبلغ الأصلي" : "Original Amount"}
+                      </span>
+                      <span>
+                        {selectedTransaction.metadata?.originalAmount
+                          ? formatCurrency(
+                              selectedTransaction.metadata.originalAmount,
+                              getReferencedPayment(selectedTransaction)?.currency ||
+                                selectedTransaction.currency
+                            )
+                          : "-"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <span className="text-muted-foreground">
+                        {isRtl ? "الخصم" : "Discount"}
+                      </span>
+                      <span>
+                        {selectedTransaction.metadata?.discountAmount
+                          ? formatCurrency(
+                              selectedTransaction.metadata.discountAmount,
+                              getReferencedPayment(selectedTransaction)?.currency ||
+                                selectedTransaction.currency
+                            )
+                          : "-"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <span className="text-muted-foreground">
+                        {isRtl ? "كود الخصم" : "Coupon"}
+                      </span>
+                      <span>
+                        {getReferencedPayment(selectedTransaction)?.couponCode ||
+                          selectedTransaction.metadata?.couponCode ||
+                          "-"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-lg border p-4">
+                <h3 className="mb-3 font-semibold">
+                  {isRtl ? "بيانات العميل" : "Customer Info"}
+                </h3>
+                {(() => {
+                  const customer = getTransactionCustomer(selectedTransaction);
+                  return (
+                    <div className="grid gap-3 md:grid-cols-2 text-sm">
+                      <div>
+                        <p className="text-muted-foreground">
+                          {isRtl ? "الاسم" : "Name"}
+                        </p>
+                        <p>{customer.name}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">
+                          {isRtl ? "البريد" : "Email"}
+                        </p>
+                        <p>{customer.email}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">
+                          {isRtl ? "الهاتف" : "Phone"}
+                        </p>
+                        <p>{customer.phone}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">
+                          {isRtl ? "المدينة / الدولة" : "City / Country"}
+                        </p>
+                        <p>
+                          {[customer.city, customer.country]
+                            .filter(Boolean)
+                            .join(" / ") || "-"}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {selectedTransaction.description ? (
+                <div className="rounded-lg border p-4">
+                  <h3 className="mb-3 font-semibold">
+                    {isRtl ? "الوصف" : "Description"}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedTransaction.description}
+                  </p>
+                </div>
+              ) : null}
+
+              {getTransactionRelatedEntities(selectedTransaction).length > 0 ? (
+                <div className="rounded-lg border p-4">
+                  <h3 className="mb-3 font-semibold">
+                    {isRtl ? "العناصر المرتبطة" : "Related Records"}
+                  </h3>
+                  <div className="grid gap-3 md:grid-cols-2 text-sm">
+                    {getTransactionRelatedEntities(selectedTransaction).map(
+                      (item: { label: string; value: string }) => (
+                        <div key={`${item.label}-${item.value}`}>
+                          <p className="text-muted-foreground">{item.label}</p>
+                          <p>{item.value}</p>
+                        </div>
+                      )
+                    )}
+                  </div>
+                </div>
+              ) : null}
+
+              {getTransactionItems(selectedTransaction).length > 0 ? (
+                <div className="rounded-lg border p-4">
+                  <h3 className="mb-3 font-semibold">
+                    {isRtl ? "تفاصيل المشتريات" : "Purchased Items"}
+                  </h3>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>{isRtl ? "العنصر" : "Item"}</TableHead>
+                          <TableHead>{isRtl ? "النوع" : "Type"}</TableHead>
+                          <TableHead>{isRtl ? "الكمية" : "Qty"}</TableHead>
+                          <TableHead>{isRtl ? "سعر الوحدة" : "Unit Price"}</TableHead>
+                          <TableHead>{isRtl ? "الإجمالي" : "Total"}</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {getTransactionItems(selectedTransaction).map((item: {
+                          id: string;
+                          name: string;
+                          itemType?: string;
+                          quantity: number;
+                          unitPrice: number;
+                          totalPrice: number;
+                          currency: string;
+                          variantName?: string;
+                        }) => (
+                          <TableRow key={item.id}>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">{item.name}</p>
+                                {item.variantName ? (
+                                  <p className="text-xs text-muted-foreground">
+                                    {item.variantName}
+                                  </p>
+                                ) : null}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {item.itemType === "course"
+                                ? isRtl
+                                  ? "دورة"
+                                  : "Course"
+                                : isRtl
+                                  ? "منتج"
+                                  : "Product"}
+                            </TableCell>
+                            <TableCell>{item.quantity}</TableCell>
+                            <TableCell>
+                              {formatCurrency(item.unitPrice, item.currency)}
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {formatCurrency(item.totalPrice, item.currency)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
       <Dialog open={showMarkPaidDialog} onOpenChange={setShowMarkPaidDialog}>
         <DialogContent className="max-w-lg">
           <DialogHeader>

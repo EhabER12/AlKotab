@@ -9,6 +9,38 @@ export class FinanceService {
     this.financeRepository = new FinanceRepository();
   }
 
+  getFinanceReferencePopulate() {
+    return [
+      { path: "createdBy", select: "name email" },
+      {
+        path: "reference.id",
+        select:
+          "merchantOrderId amount currency paymentMethod billingInfo paymentDetails productId courseId serviceId packageId studentMemberId cartSessionId couponCode couponDetails status createdAt processedAt",
+        populate: [
+          { path: "productId", select: "_id name slug coverImage basePrice" },
+          {
+            path: "courseId",
+            select: "_id title slug thumbnail price currency",
+          },
+          { path: "serviceId", select: "_id title slug startingPrice" },
+          { path: "packageId", select: "_id name price currency" },
+          {
+            path: "studentMemberId",
+            select: "_id name studentName phone status",
+          },
+          {
+            path: "cartSessionId",
+            select: "_id cartItems cartTotal currency sessionId",
+            populate: {
+              path: "cartItems.productId",
+              select: "_id name slug coverImage basePrice",
+            },
+          },
+        ],
+      },
+    ];
+  }
+
   /**
    * Create a new transaction
    */
@@ -65,6 +97,24 @@ export class FinanceService {
       return null;
     }
 
+    const paymentItems = Array.isArray(payment.paymentDetails?.items)
+      ? payment.paymentDetails.items
+      : [];
+    const hasSubscription = Boolean(payment.packageId || payment.studentMemberId);
+    const hasService = Boolean(payment.serviceId);
+    const hasCourseItem = paymentItems.some((item) => item?.itemType === "course");
+    const purchaseType = hasSubscription
+      ? "subscription"
+      : hasService
+        ? "service"
+        : hasCourseItem || payment.courseId
+          ? "course"
+          : "product";
+    const category = hasSubscription
+      ? "subscription"
+      : hasService
+        ? "service_payment"
+        : "product_sale";
     const description = `Payment: ${
       payment.billingInfo?.name || "Customer"
     } - ${payment.merchantOrderId || payment._id}`;
@@ -73,7 +123,7 @@ export class FinanceService {
       type: "income",
       amount: payment.amount,
       currency: payment.currency || "EGP",
-      category: payment.productId ? "product_sale" : "service_payment",
+      category,
       description,
       transactionDate: payment.processedAt || payment.createdAt || new Date(),
       source: "payment_auto",
@@ -86,6 +136,20 @@ export class FinanceService {
         customerName: payment.billingInfo?.name,
         customerEmail: payment.billingInfo?.email,
         paymentMethod: payment.paymentMethod,
+        purchaseType,
+        couponCode: payment.couponCode,
+        originalAmount: payment.originalAmount,
+        discountAmount: payment.discountAmount,
+        itemsCount: paymentItems.length,
+        itemsSummary: paymentItems.map((item) => ({
+          itemType: item?.itemType,
+          itemId: item?.itemId,
+          name: item?.name,
+          quantity: item?.quantity,
+          unitPrice: item?.unitPrice || item?.price,
+          totalPrice: item?.totalPrice,
+          variantName: item?.variantName,
+        })),
       },
     };
 
@@ -186,7 +250,7 @@ export class FinanceService {
       page,
       limit,
       sort,
-      populate: [{ path: "createdBy", select: "name email" }],
+      populate: this.getFinanceReferencePopulate(),
     });
   }
 
@@ -196,7 +260,7 @@ export class FinanceService {
   async getTransactionById(id) {
     const transaction = await this.financeRepository.findById(id, {
       populate: [
-        { path: "createdBy", select: "name email" },
+        ...this.getFinanceReferencePopulate(),
         { path: "deletedBy", select: "name email" },
       ],
     });

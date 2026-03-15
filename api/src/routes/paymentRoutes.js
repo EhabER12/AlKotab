@@ -26,16 +26,16 @@ import { uploadSingle } from "../middlewares/uploadMiddleware.js";
 
 const router = express.Router();
 
-router.get("/", protect, authorize("admin", "moderator"), getAllPayments);
+router.get("/", protect, authorize("admin"), getAllPayments);
 router.get("/history", protect, getUserPaymentHistory);
 router.get("/status/:id", getPaymentStatus); // Public - for payment result pages
 router.get(
   "/statistics/revenue",
   protect,
-  authorize("admin", "moderator"),
+  authorize("admin"),
   getRevenueStatistics
 );
-router.get("/:id", protect, authorize("admin", "moderator"), getPaymentById);
+router.get("/:id", protect, authorize("admin"), getPaymentById);
 router.put("/:id/status", protect, authorize("admin"), updatePaymentStatus);
 router.put("/:id/notes", protect, authorize("admin"), updateAdminNotes);
 router.post("/:id/cancel", protect, cancelPayment);

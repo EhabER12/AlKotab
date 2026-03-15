@@ -14,7 +14,35 @@ export interface FinanceTransaction {
   transactionDate: string;
   source: "manual" | "payment_auto" | "refund_auto" | "system";
   reference?: {
-    id?: string;
+    id?:
+      | string
+      | {
+          id?: string;
+          _id?: string;
+          merchantOrderId?: string;
+          amount?: number;
+          currency?: string;
+          paymentMethod?: string;
+          status?: string;
+          couponCode?: string;
+          couponDetails?: Record<string, any>;
+          billingInfo?: {
+            name?: string;
+            email?: string;
+            phone?: string;
+            city?: string;
+            country?: string;
+          };
+          paymentDetails?: Record<string, any>;
+          productId?: any;
+          courseId?: any;
+          serviceId?: any;
+          packageId?: any;
+          studentMemberId?: any;
+          cartSessionId?: any;
+          createdAt?: string;
+          processedAt?: string;
+        };
     model?: string;
     displayId?: string;
   };
@@ -26,6 +54,26 @@ export interface FinanceTransaction {
   isReconciled: boolean;
   attachmentUrl?: string;
   tags?: string[];
+  metadata?: {
+    customerName?: string;
+    customerEmail?: string;
+    paymentMethod?: string;
+    purchaseType?: string;
+    couponCode?: string;
+    originalAmount?: number;
+    discountAmount?: number;
+    itemsCount?: number;
+    itemsSummary?: Array<{
+      itemType?: string;
+      itemId?: string;
+      name?: any;
+      quantity?: number;
+      unitPrice?: number;
+      totalPrice?: number;
+      variantName?: any;
+    }>;
+    [key: string]: any;
+  };
   createdAt: string;
   updatedAt: string;
 }

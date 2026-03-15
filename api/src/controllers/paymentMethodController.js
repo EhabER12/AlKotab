@@ -8,7 +8,7 @@ import { ApiError } from "../utils/apiError.js";
 export const getAllPaymentMethods = async (req, res, next) => {
     try {
         const { includeInactive } = req.query;
-        const isAdmin = req.user?.role === "admin" || req.user?.role === "moderator";
+        const isAdmin = req.user?.role === "admin";
 
         const filter = {};
         // Only filter inactive if user is not admin OR if admin didn't explicitly request inactive ones

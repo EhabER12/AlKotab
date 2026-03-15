@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAppDispatch } from "@/store/hooks";
 import {
     getPaymentMethodsThunk,
@@ -17,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, CreditCard, CheckCircle2, XCircle, Info, Eye, EyeOff, Save, Plus, RotateCcw } from "lucide-react";
 import toast from "react-hot-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { isAdmin, isAuthenticated } from "@/store/services/authService";
 
 const getErrorMessage = (error: any, fallback: string) => {
     if (!error) return fallback;
@@ -28,8 +30,10 @@ const getErrorMessage = (error: any, fallback: string) => {
 
 export default function PaymentMethodsPage() {
     const dispatch = useAppDispatch();
+    const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const hasAdminAccess = isAuthenticated() && isAdmin();
 
     // PayPal state
     const [paypal, setPaypal] = useState<PaymentMethod | null>(null);
@@ -59,12 +63,22 @@ export default function PaymentMethodsPage() {
     const [showSecretKey, setShowSecretKey] = useState(false);
 
     useEffect(() => {
+        if (!isAuthenticated()) {
+            router.push("/login");
+            return;
+        }
+
+        if (!isAdmin()) {
+            router.push("/dashboard");
+            return;
+        }
+
         let isMounted = true;
         loadPaymentMethods(() => isMounted);
         return () => {
             isMounted = false;
         };
-    }, []);
+    }, [router]);
 
     const loadPaymentMethods = async (getIsMounted?: () => boolean) => {
         try {
@@ -270,6 +284,10 @@ export default function PaymentMethodsPage() {
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
         );
+    }
+
+    if (!hasAdminAccess) {
+        return null;
     }
 
     return (

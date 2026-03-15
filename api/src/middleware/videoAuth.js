@@ -29,7 +29,11 @@ export const protectVideo = async (req, res, next) => {
         }
 
         // Check if user is admin or teacher
-        if (req.user.role === "admin" || req.user.role === "teacher") {
+        if (
+            req.user.role === "admin" ||
+            req.user.role === "moderator" ||
+            req.user.role === "teacher"
+        ) {
             return next();
         }
 

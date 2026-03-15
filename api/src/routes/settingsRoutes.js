@@ -14,6 +14,7 @@ import {
   upload,
   ensureUploadDirectories,
 } from "../middlewares/uploadMiddleware.js";
+import { ApiError } from "../utils/apiError.js";
 import { imagePathMiddleware } from "../middlewares/imagePathMiddleware.js";
 
 const router = express.Router();
@@ -26,7 +27,22 @@ router.get("/public", getPublicSettings);
 router.put(
   "/",
   protect,
-  authorize("admin"),
+  authorize("admin", "moderator"),
+  (req, res, next) => {
+    if (
+      req.user?.role === "moderator" &&
+      req.is("multipart/form-data")
+    ) {
+      return next(
+        new ApiError(
+          403,
+          "Moderators can only update subscription teachers"
+        )
+      );
+    }
+
+    next();
+  },
   ensureUploadDirectories,
   upload.fields([
     { name: "logo", maxCount: 1 },

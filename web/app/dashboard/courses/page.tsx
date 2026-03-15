@@ -77,6 +77,7 @@ export default function CoursesPage() {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { isRtl, locale } = useAdminLocale();
+  const canModerateCourses = isAdmin() || isModerator();
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
@@ -151,7 +152,7 @@ export default function CoursesPage() {
       if (isPublished) {
         await dispatch(unpublishCourse(id)).unwrap();
       } else {
-        if (isAdmin()) {
+        if (canModerateCourses) {
           await dispatch(publishCourse(id)).unwrap();
         } else if (isTeacher()) {
           await dispatch(requestPublishCourse(id)).unwrap();
@@ -439,7 +440,7 @@ export default function CoursesPage() {
                                 </>
                               )}
                             </DropdownMenuItem>
-                            {isAdmin() && !course.isPublished && (course.publishRequestedAt || course.approvalStatus?.status === 'pending') && (
+                            {canModerateCourses && !course.isPublished && (course.publishRequestedAt || course.approvalStatus?.status === 'pending') && (
                               <DropdownMenuItem
                                 className="text-orange-600"
                                 onClick={() => {
@@ -451,7 +452,7 @@ export default function CoursesPage() {
                                 {isRtl ? "رفض النشر" : "Reject Publish"}
                               </DropdownMenuItem>
                             )}
-                            {isAdmin() && (
+                            {canModerateCourses && (
                               <>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem

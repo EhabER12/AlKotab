@@ -53,7 +53,7 @@ router.post("/claim", protect, claimCertificate);
 router.post(
   "/regenerate-all-pdfs",
   protect,
-  authorize("admin"),
+  authorize("admin", "moderator"),
   regenerateAllCertificatesPDFs
 );
 router.post(
@@ -78,11 +78,11 @@ router.post(
 
 // ============ CERTIFICATE TEMPLATE ROUTES ============
 
-// Admin routes
+// Admin/Moderator routes
 router.post(
   "/templates",
   protect,
-  authorize("admin"),
+  authorize("admin", "moderator"),
   createTemplate
 );
 router.get(
@@ -100,13 +100,13 @@ router.get(
 router.put(
   "/templates/:id",
   protect,
-  authorize("admin"),
+  authorize("admin", "moderator"),
   updateTemplate
 );
 router.delete(
   "/templates/:id",
   protect,
-  authorize("admin"),
+  authorize("admin", "moderator"),
   deleteTemplate
 );
 
@@ -131,7 +131,7 @@ router.get(
 router.post(
   "/:id/revoke",
   protect,
-  authorize("admin"),
+  authorize("admin", "moderator"),
   revokeCertificate
 );
 router.post(

@@ -105,7 +105,7 @@ export const createManualPayment = async (req, res, next) => {
       couponCode,
     } = req.body;
     const userId = req.user._id;
-    const isAdmin = req.user.role === "admin" || req.user.role === "moderator";
+    const isAdmin = req.user.role === "admin";
     const paymentProofUrl = req.file ? `uploads/${req.file.filename}` : null;
 
     if (!productId && !courseId && !serviceId && !packageId) {

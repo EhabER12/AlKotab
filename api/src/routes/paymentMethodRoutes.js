@@ -16,7 +16,7 @@ router.get("/", optionalAuth, getAllPaymentMethods);
 
 // Admin routes
 router.use(protect);
-router.use(authorize("admin", "moderator"));
+router.use(authorize("admin"));
 
 router.post("/", createPaymentMethod);
 router.get("/:id", getPaymentMethodById);

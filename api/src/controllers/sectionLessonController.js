@@ -24,7 +24,8 @@ export const getSectionById = async (req, res, next) => {
   try {
     const { id } = req.params;
     const includeUnpublished =
-      req.user && (req.user.role === "admin" || req.user.role === "teacher");
+      req.user &&
+      ["admin", "moderator", "teacher"].includes(req.user.role);
 
     const section = await sectionService.getSectionById(id, includeUnpublished);
 
@@ -41,7 +42,8 @@ export const getSectionsByCourse = async (req, res, next) => {
   try {
     const { courseId } = req.params;
     const includeUnpublished =
-      req.user && (req.user.role === "admin" || req.user.role === "teacher");
+      req.user &&
+      ["admin", "moderator", "teacher"].includes(req.user.role);
 
     const sections = await sectionService.getSectionsByCourse(
       courseId,
@@ -125,7 +127,8 @@ export const getLessonById = async (req, res, next) => {
   try {
     const { id } = req.params;
     const includeUnpublished =
-      req.user && (req.user.role === "admin" || req.user.role === "teacher");
+      req.user &&
+      ["admin", "moderator", "teacher"].includes(req.user.role);
 
     const lesson = await lessonService.getLessonById(id, includeUnpublished);
 
@@ -142,7 +145,8 @@ export const getLessonsBySection = async (req, res, next) => {
   try {
     const { sectionId } = req.params;
     const includeUnpublished =
-      req.user && (req.user.role === "admin" || req.user.role === "teacher");
+      req.user &&
+      ["admin", "moderator", "teacher"].includes(req.user.role);
 
     const lessons = await lessonService.getLessonsBySection(
       sectionId,
@@ -162,7 +166,8 @@ export const getLessonsByCourse = async (req, res, next) => {
   try {
     const { courseId } = req.params;
     const includeUnpublished =
-      req.user && (req.user.role === "admin" || req.user.role === "teacher");
+      req.user &&
+      ["admin", "moderator", "teacher"].includes(req.user.role);
 
     const lessons = await lessonService.getLessonsByCourse(
       courseId,

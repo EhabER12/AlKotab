@@ -117,7 +117,9 @@ export default function DashboardPage() {
       if (isAdmin() || isModerator()) {
         dispatch(getReviews());
         dispatch(getForms());
-        dispatch(getRevenueStatisticsThunk());
+        if (isAdmin()) {
+          dispatch(getRevenueStatisticsThunk());
+        }
 
         getDashboardStats()
           .then((data) => setStats(data))

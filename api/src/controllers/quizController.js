@@ -45,7 +45,9 @@ export const createQuiz = async (req, res, next) => {
 export const getQuizBySlug = async (req, res, next) => {
   try {
     const { slug } = req.params;
-    const includeAnswers = req.user && (req.user.role === "admin" || req.user.role === "teacher");
+    const includeAnswers =
+      req.user &&
+      ["admin", "moderator", "teacher"].includes(req.user.role);
 
     const quiz = await quizService.getQuizBySlug(slug, includeAnswers);
 
@@ -62,7 +64,9 @@ export const getQuizBySlug = async (req, res, next) => {
 export const getQuizById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const includeAnswers = req.user && (req.user.role === "admin" || req.user.role === "teacher");
+    const includeAnswers =
+      req.user &&
+      ["admin", "moderator", "teacher"].includes(req.user.role);
 
     const quiz = await quizService.getQuizById(id, includeAnswers);
 

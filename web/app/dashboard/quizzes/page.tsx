@@ -53,6 +53,7 @@ export default function QuizzesPage() {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { t, isRtl } = useAdminLocale();
+  const canManageQuizzes = isAdmin() || isModerator();
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
 
   const { quizzes, isLoading, error } = useAppSelector((state) => state.quizzes);
@@ -330,7 +331,7 @@ export default function QuizzesPage() {
                             </DropdownMenuItem>
                           )}
                           <DropdownMenuSeparator />
-                          {isAdmin() && (
+                          {canManageQuizzes && (
                             <DropdownMenuItem
                               className="text-red-600"
                               onClick={() => handleDelete((quiz.id || quiz._id)!)}

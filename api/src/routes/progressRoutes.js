@@ -33,13 +33,13 @@ router.delete("/course/:courseId/reset", protect, resetProgress);
 router.get(
   "/course/:courseId/stats",
   protect,
-  authorize("admin", "teacher"),
+  authorize("admin", "moderator", "teacher"),
   getCourseProgressStats
 );
 router.get(
   "/course/:courseId/students",
   protect,
-  authorize("admin", "teacher"),
+  authorize("admin", "moderator", "teacher"),
   getStudentsProgress
 );
 

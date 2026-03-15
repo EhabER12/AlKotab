@@ -1,12 +1,32 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useAdminLocale } from "@/hooks/dashboard/useAdminLocale";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ManualPaymentMethods } from "@/components/dashboard/ManualPaymentMethods";
 import PaymentHistory from "@/components/dashboard/PaymentHistory";
+import { isAdmin, isAuthenticated } from "@/store/services/authService";
 
 export default function PaymentsPage() {
+  const router = useRouter();
   const { t, isRtl } = useAdminLocale();
+  const hasAdminAccess = isAuthenticated() && isAdmin();
+
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      router.push("/login");
+      return;
+    }
+
+    if (!isAdmin()) {
+      router.push("/dashboard");
+    }
+  }, [router]);
+
+  if (!hasAdminAccess) {
+    return null;
+  }
 
   return (
     <div className="space-y-6 p-6" dir={isRtl ? "rtl" : "ltr"}>

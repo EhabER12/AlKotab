@@ -16,6 +16,11 @@ import { getPackages } from "@/store/services/packageService";
 import { getCourses } from "@/store/services/courseService";
 import { getQuizzes } from "@/store/services/quizService";
 import { getStudentMembers } from "@/store/services/studentMemberService";
+import {
+  isAuthenticated,
+  isAdmin,
+  isModerator,
+} from "@/store/services/authService";
 import { useAdminLocale } from "@/hooks/dashboard/useAdminLocale";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -163,6 +168,8 @@ export default function CertificateDesignerPage() {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { t, isRtl } = useAdminLocale();
+  const hasCertificateAccess =
+    isAuthenticated() && (isAdmin() || isModerator());
 
   const { templates, isLoading } = useAppSelector((state) => state.certificates);
   const [selectedTemplate, setSelectedTemplate] = useState<CertificateTemplate | null>(null);
@@ -233,12 +240,31 @@ export default function CertificateDesignerPage() {
   ).sort();
 
   useEffect(() => {
+    if (!isAuthenticated()) {
+      router.push("/login");
+      return;
+    }
+
+    if (!isAdmin() && !isModerator()) {
+      router.push("/dashboard");
+    }
+  }, [router]);
+
+  useEffect(() => {
+    if (!hasCertificateAccess) {
+      return;
+    }
+
     dispatch(getAllTemplates());
     dispatch(getPackages());
     dispatch(getCourses({}));
     dispatch(getQuizzes());
     dispatch(getStudentMembers());
-  }, [dispatch]);
+  }, [dispatch, hasCertificateAccess]);
+
+  if (!hasCertificateAccess) {
+    return null;
+  }
 
   // Default placeholder values for fallback
   const defaultPlaceholder: Placeholder = {

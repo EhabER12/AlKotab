@@ -26,14 +26,14 @@ router.get("/my/teaching", protect, authorize("teacher", "admin"), getMyCourses)
 router.get("/my/enrolled", protect, getEnrolledCourses);
 
 // Protected routes - Course management
-router.post("/", protect, authorize("teacher", "admin"), createCourse);
-router.put("/:id", protect, authorize("teacher", "admin"), updateCourse);
-router.delete("/:id", protect, authorize("teacher", "admin"), deleteCourse);
+router.post("/", protect, authorize("teacher", "admin", "moderator"), createCourse);
+router.put("/:id", protect, authorize("teacher", "admin", "moderator"), updateCourse);
+router.delete("/:id", protect, authorize("teacher", "admin", "moderator"), deleteCourse);
 
 // Publishing workflow
 router.post("/:id/publish-request", protect, authorize("teacher"), requestPublish);
-router.post("/:id/publish", protect, authorize("admin"), approvePublish);
-router.post("/:id/reject", protect, authorize("admin"), rejectPublish);
+router.post("/:id/publish", protect, authorize("admin", "moderator"), approvePublish);
+router.post("/:id/reject", protect, authorize("admin", "moderator"), rejectPublish);
 
 // Enrollment
 router.post("/:id/enroll", protect, enrollCourse);

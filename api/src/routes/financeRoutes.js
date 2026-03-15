@@ -21,8 +21,8 @@ const router = express.Router();
 // All finance routes require authentication
 router.use(protect);
 
-// Settings - allow read for moderators
-router.get("/settings", authorize("admin", "moderator"), getFinanceSettings);
+// Finance settings are admin-only
+router.get("/settings", authorize("admin"), getFinanceSettings);
 router.put("/settings", authorize("admin"), updateFinanceSettings);
 
 // Admin only routes below

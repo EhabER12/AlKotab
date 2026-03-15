@@ -34,25 +34,25 @@ router.get("/sections/course/:courseId", protect, getSectionsByCourse);
 router.post(
   "/sections",
   protect,
-  authorize("admin", "teacher"),
+  authorize("admin", "moderator", "teacher"),
   createSection
 );
 router.put(
   "/sections/:id",
   protect,
-  authorize("admin", "teacher"),
+  authorize("admin", "moderator", "teacher"),
   updateSection
 );
 router.delete(
   "/sections/:id",
   protect,
-  authorize("admin", "teacher"),
+  authorize("admin", "moderator", "teacher"),
   deleteSection
 );
 router.post(
   "/sections/course/:courseId/reorder",
   protect,
-  authorize("admin", "teacher"),
+  authorize("admin", "moderator", "teacher"),
   reorderSections
 );
 
@@ -72,25 +72,25 @@ router.get(
 router.post(
   "/lessons",
   protect,
-  authorize("admin", "teacher"),
+  authorize("admin", "moderator", "teacher"),
   createLesson
 );
 router.put(
   "/lessons/:id",
   protect,
-  authorize("admin", "teacher"),
+  authorize("admin", "moderator", "teacher"),
   updateLesson
 );
 router.delete(
   "/lessons/:id",
   protect,
-  authorize("admin", "teacher"),
+  authorize("admin", "moderator", "teacher"),
   deleteLesson
 );
 router.post(
   "/lessons/section/:sectionId/reorder",
   protect,
-  authorize("admin", "teacher"),
+  authorize("admin", "moderator", "teacher"),
   reorderLessons
 );
 
@@ -100,7 +100,7 @@ router.post(
 router.post(
   "/lessons/:id/upload-video",
   protect,
-  authorize("admin", "teacher"),
+  authorize("admin", "moderator", "teacher"),
   handleVideoUpload,
   uploadLessonVideo
 );
@@ -109,7 +109,7 @@ router.post(
 router.delete(
   "/lessons/:id/video",
   protect,
-  authorize("admin", "teacher"),
+  authorize("admin", "moderator", "teacher"),
   deleteLessonVideo
 );
 
