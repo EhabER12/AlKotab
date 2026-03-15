@@ -11,7 +11,8 @@
     "seed": "node src/scripts/seed.js",
     "seed:reviews": "node src/seeds/seedReviews.js",
     "seed:services": "node src/seeds/seedServices.js",
-    "script:enroll-paid-students": "node src/scripts/enrollPaidStudents.js"
+    "script:enroll-paid-students": "node src/scripts/enrollPaidStudents.js",
+    "script:create-admin": "node src/scripts/createAdminUser.js"
   },
   "keywords": [
     "nodejs",
