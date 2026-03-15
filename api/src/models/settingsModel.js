@@ -86,6 +86,54 @@ const navbarLinkSchema = new mongoose.Schema({
   },
 });
 
+const heroTextSizesSchema = new mongoose.Schema(
+  {
+    titleMobile: {
+      type: Number,
+      default: 40,
+      min: 24,
+      max: 96,
+    },
+    titleDesktop: {
+      type: Number,
+      default: 72,
+      min: 32,
+      max: 140,
+    },
+    subtitleMobile: {
+      type: Number,
+      default: 18,
+      min: 14,
+      max: 40,
+    },
+    subtitleDesktop: {
+      type: Number,
+      default: 24,
+      min: 16,
+      max: 48,
+    },
+  },
+  { _id: false }
+);
+
+const methodologyStepSchema = new mongoose.Schema(
+  {
+    title: {
+      ar: { type: String, default: "" },
+      en: { type: String, default: "" },
+    },
+    subtitle: {
+      ar: { type: String, default: "" },
+      en: { type: String, default: "" },
+    },
+    description: {
+      ar: { type: String, default: "" },
+      en: { type: String, default: "" },
+    },
+  },
+  { _id: false }
+);
+
 // Homepage Section Schema
 const sectionConfigSchema = new mongoose.Schema({
   badge: {
@@ -93,6 +141,10 @@ const sectionConfigSchema = new mongoose.Schema({
     en: { type: String, default: "" },
   },
   title: {
+    ar: { type: String, default: "" },
+    en: { type: String, default: "" },
+  },
+  titleHighlight: {
     ar: { type: String, default: "" },
     en: { type: String, default: "" },
   },
@@ -119,6 +171,14 @@ const sectionConfigSchema = new mongoose.Schema({
   backgroundImage: {
     type: String,
     default: "",
+  },
+  textSizes: {
+    type: heroTextSizesSchema,
+    default: () => ({}),
+  },
+  steps: {
+    type: [methodologyStepSchema],
+    default: () => [],
   },
   order: {
     type: Number,

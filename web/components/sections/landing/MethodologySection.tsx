@@ -6,44 +6,95 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { Search, Map, Rocket, TrendingUp } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { PublicWebsiteSettingsData } from "@/store/services/settingsService";
 
 gsap.registerPlugin(ScrollTrigger);
 
-const stepIcons = [Search, Map, Rocket, TrendingUp];
-
-export function MethodologySection({ locale }: { locale: string }) {
+export function MethodologySection({
+  locale,
+  settings,
+}: {
+  locale: string;
+  settings?: PublicWebsiteSettingsData | null;
+}) {
   const sectionRef = useRef<HTMLDivElement>(null);
   const t = useTranslations("landing.methodology");
   const isRtl = locale === "ar";
+  const methodologySettings = settings?.homepageSections?.about;
+  const title = isRtl
+    ? methodologySettings?.title?.ar || t("title")
+    : methodologySettings?.title?.en || t("title");
+  const titleHighlight = isRtl
+    ? methodologySettings?.titleHighlight?.ar || t("titleHighlight")
+    : methodologySettings?.titleHighlight?.en || t("titleHighlight");
+  const subtitle = isRtl
+    ? methodologySettings?.subtitle?.ar || t("subtitle")
+    : methodologySettings?.subtitle?.en || t("subtitle");
 
   const steps = [
     {
       number: "01",
       icon: Search,
-      title: t("step1Title"),
-      titleEn: t("step1Subtitle"),
-      description: t("step1Desc"),
+      title:
+        (isRtl
+          ? methodologySettings?.steps?.[0]?.title?.ar
+          : methodologySettings?.steps?.[0]?.title?.en) || t("step1Title"),
+      titleEn:
+        (isRtl
+          ? methodologySettings?.steps?.[0]?.subtitle?.ar
+          : methodologySettings?.steps?.[0]?.subtitle?.en) || t("step1Subtitle"),
+      description:
+        (isRtl
+          ? methodologySettings?.steps?.[0]?.description?.ar
+          : methodologySettings?.steps?.[0]?.description?.en) || t("step1Desc"),
     },
     {
       number: "02",
       icon: Map,
-      title: t("step2Title"),
-      titleEn: t("step2Subtitle"),
-      description: t("step2Desc"),
+      title:
+        (isRtl
+          ? methodologySettings?.steps?.[1]?.title?.ar
+          : methodologySettings?.steps?.[1]?.title?.en) || t("step2Title"),
+      titleEn:
+        (isRtl
+          ? methodologySettings?.steps?.[1]?.subtitle?.ar
+          : methodologySettings?.steps?.[1]?.subtitle?.en) || t("step2Subtitle"),
+      description:
+        (isRtl
+          ? methodologySettings?.steps?.[1]?.description?.ar
+          : methodologySettings?.steps?.[1]?.description?.en) || t("step2Desc"),
     },
     {
       number: "03",
       icon: Rocket,
-      title: t("step3Title"),
-      titleEn: t("step3Subtitle"),
-      description: t("step3Desc"),
+      title:
+        (isRtl
+          ? methodologySettings?.steps?.[2]?.title?.ar
+          : methodologySettings?.steps?.[2]?.title?.en) || t("step3Title"),
+      titleEn:
+        (isRtl
+          ? methodologySettings?.steps?.[2]?.subtitle?.ar
+          : methodologySettings?.steps?.[2]?.subtitle?.en) || t("step3Subtitle"),
+      description:
+        (isRtl
+          ? methodologySettings?.steps?.[2]?.description?.ar
+          : methodologySettings?.steps?.[2]?.description?.en) || t("step3Desc"),
     },
     {
       number: "04",
       icon: TrendingUp,
-      title: t("step4Title"),
-      titleEn: t("step4Subtitle"),
-      description: t("step4Desc"),
+      title:
+        (isRtl
+          ? methodologySettings?.steps?.[3]?.title?.ar
+          : methodologySettings?.steps?.[3]?.title?.en) || t("step4Title"),
+      titleEn:
+        (isRtl
+          ? methodologySettings?.steps?.[3]?.subtitle?.ar
+          : methodologySettings?.steps?.[3]?.subtitle?.en) || t("step4Subtitle"),
+      description:
+        (isRtl
+          ? methodologySettings?.steps?.[3]?.description?.ar
+          : methodologySettings?.steps?.[3]?.description?.en) || t("step4Desc"),
     },
   ];
 
@@ -87,11 +138,10 @@ export function MethodologySection({ locale }: { locale: string }) {
         {/* Section Header */}
         <div className="text-center mb-16" dir={isRtl ? "rtl" : "ltr"}>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            {t("title")}{" "}
-            <span className="text-genoun-green">{t("titleHighlight")}</span>
+            {title} <span className="text-genoun-green">{titleHighlight}</span>
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            {t("subtitle")}
+            {subtitle}
           </p>
         </div>
 

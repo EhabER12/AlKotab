@@ -1,13 +1,30 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import React, { useEffect, useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { HomepageSections, AuthorityBarSettings, ReviewsSectionSettings, WhyGenounSettings } from "@/store/services/settingsService";
-import { GripVertical, Eye, EyeOff, ArrowUp, ArrowDown } from "lucide-react";
+import {
+  AuthorityBarSettings,
+  HomepageSections,
+  ReviewsSectionSettings,
+  WhyGenounSettings,
+} from "@/store/services/settingsService";
+import {
+  ArrowDown,
+  ArrowUp,
+  Eye,
+  EyeOff,
+  GripVertical,
+} from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface SectionOrderItem {
@@ -15,7 +32,7 @@ interface SectionOrderItem {
   label: { ar: string; en: string };
   order: number;
   isEnabled: boolean;
-  type: 'homepage' | 'authority' | 'reviews' | 'whyGenoun';
+  type: "homepage" | "authority" | "reviews" | "whyGenoun";
 }
 
 interface SectionOrderSettingsProps {
@@ -44,7 +61,6 @@ export const SectionOrderSettings: React.FC<SectionOrderSettingsProps> = ({
   const [orderedSections, setOrderedSections] = useState<SectionOrderItem[]>([]);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
-  // Section labels
   const allSectionLabels: Record<string, { ar: string; en: string }> = {
     hero: { ar: "القسم الرئيسي", en: "Hero Section" },
     authorityBar: { ar: "شريط الثقة", en: "Authority Bar" },
@@ -52,135 +68,92 @@ export const SectionOrderSettings: React.FC<SectionOrderSettingsProps> = ({
     whyGenoun: { ar: "لماذا جنون", en: "Why Genoun" },
     services: { ar: "الخدمات", en: "Services" },
     stats: { ar: "الإحصائيات", en: "Statistics" },
-    about: { ar: "من نحن", en: "About Us" },
+    about: { ar: "المنهجية", en: "Methodology" },
     testimonials: { ar: "آراء الطلاب", en: "Reviews" },
     cta: { ar: "دعوة للعمل", en: "Call to Action" },
   };
 
-  // Initialize ordered sections from props
   useEffect(() => {
     const items: SectionOrderItem[] = [];
 
-    // Add homepage sections
     (Object.keys(sections) as Array<keyof HomepageSections>).forEach((key) => {
       const section = sections[key];
       items.push({
-        key: key,
+        key,
         label: allSectionLabels[key] || { ar: key, en: key },
         order: section.order ?? 0,
         isEnabled: section.isEnabled,
-        type: 'homepage',
+        type: "homepage",
       });
     });
 
-    // Add authority bar
     items.push({
-      key: 'authorityBar',
+      key: "authorityBar",
       label: allSectionLabels.authorityBar,
       order: authorityBar.order ?? 1,
       isEnabled: authorityBar.isEnabled ?? true,
-      type: 'authority',
+      type: "authority",
     });
 
-    // Add reviews section
     items.push({
-      key: 'testimonials',
+      key: "testimonials",
       label: allSectionLabels.testimonials,
       order: reviewsSettings.order ?? 6,
       isEnabled: reviewsSettings.isEnabled ?? true,
-      type: 'reviews',
+      type: "reviews",
     });
 
-    // Add why genoun section
     items.push({
-      key: 'whyGenoun',
+      key: "whyGenoun",
       label: allSectionLabels.whyGenoun,
       order: whyGenounSettings.order ?? 2,
       isEnabled: whyGenounSettings.isEnabled ?? true,
-      type: 'whyGenoun',
+      type: "whyGenoun",
     });
 
-    // Remove duplicates and sort by order
-    const uniqueItems = Array.from(new Map(items.map(item => [item.key, item])).values());
+    const uniqueItems = Array.from(
+      new Map(items.map((item) => [item.key, item])).values()
+    );
     uniqueItems.sort((a, b) => a.order - b.order);
     setOrderedSections(uniqueItems);
   }, [sections, authorityBar, reviewsSettings, whyGenounSettings]);
 
-  const handleDragStart = (index: number) => {
-    setDraggedIndex(index);
-  };
-
-  const handleDragOver = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-
-    if (draggedIndex === null || draggedIndex === index) return;
-
-    const newOrdered = [...orderedSections];
-    const draggedItem = newOrdered[draggedIndex];
-
-    newOrdered.splice(draggedIndex, 1);
-    newOrdered.splice(index, 0, draggedItem);
-
-    setOrderedSections(newOrdered);
-    setDraggedIndex(index);
-  };
-
-  const handleDragEnd = () => {
-    setDraggedIndex(null);
-    applyOrderChanges();
-  };
-
-  const moveUp = (index: number) => {
-    if (index === 0) return;
-    const newOrdered = [...orderedSections];
-    [newOrdered[index - 1], newOrdered[index]] = [newOrdered[index], newOrdered[index - 1]];
-    setOrderedSections(newOrdered);
-    applyOrderChanges(newOrdered);
-  };
-
-  const moveDown = (index: number) => {
-    if (index === orderedSections.length - 1) return;
-    const newOrdered = [...orderedSections];
-    [newOrdered[index], newOrdered[index + 1]] = [newOrdered[index + 1], newOrdered[index]];
-    setOrderedSections(newOrdered);
-    applyOrderChanges(newOrdered);
-  };
-
-  const toggleEnabled = (index: number) => {
-    const newOrdered = [...orderedSections];
-    newOrdered[index].isEnabled = !newOrdered[index].isEnabled;
-    setOrderedSections(newOrdered);
-    applyOrderChanges(newOrdered);
-  };
-
-  const applyOrderChanges = (ordered?: SectionOrderItem[]) => {
-    const items = ordered || orderedSections;
+  const applyOrderChanges = (items: SectionOrderItem[]) => {
     const updatedSections = { ...sections };
     let updatedAuthorityBar = { ...authorityBar };
     let updatedReviewsSettings = { ...reviewsSettings };
     let updatedWhyGenounSettings = { ...whyGenounSettings };
 
     items.forEach((item, index) => {
-      if (item.type === 'homepage' && item.key in sections) {
+      if (item.type === "homepage" && item.key in sections) {
         const sectionKey = item.key as keyof HomepageSections;
         updatedSections[sectionKey] = {
           ...sections[sectionKey],
           order: index,
           isEnabled: item.isEnabled,
         };
-      } else if (item.type === 'authority') {
+        return;
+      }
+
+      if (item.type === "authority") {
         updatedAuthorityBar = {
           ...authorityBar,
           order: index,
           isEnabled: item.isEnabled,
         };
-      } else if (item.type === 'reviews') {
+        return;
+      }
+
+      if (item.type === "reviews") {
         updatedReviewsSettings = {
           ...reviewsSettings,
           order: index,
           isEnabled: item.isEnabled,
         };
-      } else if (item.type === 'whyGenoun') {
+        return;
+      }
+
+      if (item.type === "whyGenoun") {
         updatedWhyGenounSettings = {
           ...whyGenounSettings,
           order: index,
@@ -195,36 +168,81 @@ export const SectionOrderSettings: React.FC<SectionOrderSettingsProps> = ({
     setWhyGenounSettings(updatedWhyGenounSettings);
   };
 
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+
+    if (draggedIndex === null || draggedIndex === index) return;
+
+    const nextItems = [...orderedSections];
+    const [draggedItem] = nextItems.splice(draggedIndex, 1);
+    nextItems.splice(index, 0, draggedItem);
+
+    setOrderedSections(nextItems);
+    setDraggedIndex(index);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    applyOrderChanges(orderedSections);
+  };
+
+  const moveItem = (index: number, direction: -1 | 1) => {
+    const nextIndex = index + direction;
+    if (nextIndex < 0 || nextIndex >= orderedSections.length) return;
+
+    const nextItems = [...orderedSections];
+    [nextItems[index], nextItems[nextIndex]] = [
+      nextItems[nextIndex],
+      nextItems[index],
+    ];
+
+    setOrderedSections(nextItems);
+    applyOrderChanges(nextItems);
+  };
+
+  const toggleEnabled = (index: number) => {
+    const nextItems = [...orderedSections];
+    nextItems[index].isEnabled = !nextItems[index].isEnabled;
+    setOrderedSections(nextItems);
+    applyOrderChanges(nextItems);
+  };
+
   const handleOrderInputChange = (index: number, value: string) => {
-    const newOrder = parseInt(value, 10);
-    if (isNaN(newOrder) || newOrder < 0) return;
+    const nextOrder = parseInt(value, 10);
+    if (Number.isNaN(nextOrder) || nextOrder < 0) return;
 
-    const newOrdered = [...orderedSections];
-    newOrdered[index].order = newOrder;
+    const nextItems = [...orderedSections];
+    nextItems[index].order = nextOrder;
+    nextItems.sort((a, b) => a.order - b.order);
 
-    newOrdered.sort((a, b) => a.order - b.order);
-    setOrderedSections(newOrdered);
-    applyOrderChanges(newOrdered);
+    setOrderedSections(nextItems);
+    applyOrderChanges(nextItems);
   };
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>
-          {formLang === "ar" ? "ترتيب أقسام الصفحة الرئيسية" : "Homepage Sections Order"}
+          {formLang === "ar"
+            ? "ترتيب أقسام الصفحة الرئيسية"
+            : "Homepage Sections Order"}
         </CardTitle>
         <CardDescription>
           {formLang === "ar"
-            ? "قم بترتيب الأقسام عن طريق السحب والإفلات أو استخدام الأزرار"
-            : "Arrange sections using drag-and-drop or buttons"}
+            ? "رتّب الأقسام بالسحب والإفلات أو باستخدام أزرار التحريك."
+            : "Arrange sections using drag-and-drop or move buttons."}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <Alert>
           <AlertDescription>
             {formLang === "ar"
-              ? "ملاحظة: يمكنك تعطيل الأقسام غير المطلوبة بدلاً من حذفها. الأقسام المعطلة لن تظهر في الصفحة الرئيسية."
-              : "Note: You can disable sections instead of removing them. Disabled sections won't appear on the homepage."}
+              ? "يمكنك تعطيل القسم بدل حذفه. الأقسام المعطلة لن تظهر في الصفحة الرئيسية."
+              : "You can disable a section instead of removing it. Disabled sections won't appear on the homepage."}
           </AlertDescription>
         </Alert>
 
@@ -236,21 +254,18 @@ export const SectionOrderSettings: React.FC<SectionOrderSettingsProps> = ({
               onDragStart={() => handleDragStart(index)}
               onDragOver={(e) => handleDragOver(e, index)}
               onDragEnd={handleDragEnd}
-              className={`
-                flex items-center gap-3 p-4 border rounded-lg bg-card cursor-move
-                transition-all hover:shadow-md
-                ${draggedIndex === index ? "opacity-50 scale-95" : ""}
-                ${!item.isEnabled ? "opacity-60 bg-muted" : ""}
-              `}
+              className={[
+                "flex cursor-move items-center gap-3 rounded-lg border bg-card p-4 transition-all hover:shadow-md",
+                draggedIndex === index ? "scale-95 opacity-50" : "",
+                !item.isEnabled ? "bg-muted opacity-60" : "",
+              ].join(" ")}
             >
-              {/* Drag Handle */}
               <div className="cursor-grab active:cursor-grabbing">
                 <GripVertical className="h-5 w-5 text-muted-foreground" />
               </div>
 
-              {/* Order Number */}
               <div className="flex items-center gap-2">
-                <Label className="text-xs text-muted-foreground min-w-[40px]">
+                <Label className="min-w-[40px] text-xs text-muted-foreground">
                   {formLang === "ar" ? "الترتيب:" : "Order:"}
                 </Label>
                 <Input
@@ -258,11 +273,10 @@ export const SectionOrderSettings: React.FC<SectionOrderSettingsProps> = ({
                   min="0"
                   value={index}
                   onChange={(e) => handleOrderInputChange(index, e.target.value)}
-                  className="w-16 h-8 text-center"
+                  className="h-8 w-16 text-center"
                 />
               </div>
 
-              {/* Section Label */}
               <div className="flex-1">
                 <p className="font-medium">
                   {formLang === "ar" ? item.label.ar : item.label.en}
@@ -270,13 +284,12 @@ export const SectionOrderSettings: React.FC<SectionOrderSettingsProps> = ({
                 <p className="text-xs text-muted-foreground">{item.key}</p>
               </div>
 
-              {/* Enable/Disable Toggle */}
               <div className="flex items-center gap-2">
                 <Switch
                   checked={item.isEnabled}
                   onCheckedChange={() => toggleEnabled(index)}
                 />
-                <Label className="text-sm cursor-pointer">
+                <Label className="cursor-pointer text-sm">
                   {item.isEnabled ? (
                     <Eye className="h-4 w-4 text-green-600" />
                   ) : (
@@ -285,14 +298,13 @@ export const SectionOrderSettings: React.FC<SectionOrderSettingsProps> = ({
                 </Label>
               </div>
 
-              {/* Move Buttons */}
               <div className="flex flex-col gap-1">
                 <Button
                   type="button"
                   variant="outline"
                   size="icon"
                   className="h-7 w-7"
-                  onClick={() => moveUp(index)}
+                  onClick={() => moveItem(index, -1)}
                   disabled={index === 0}
                 >
                   <ArrowUp className="h-3 w-3" />
@@ -302,7 +314,7 @@ export const SectionOrderSettings: React.FC<SectionOrderSettingsProps> = ({
                   variant="outline"
                   size="icon"
                   className="h-7 w-7"
-                  onClick={() => moveDown(index)}
+                  onClick={() => moveItem(index, 1)}
                   disabled={index === orderedSections.length - 1}
                 >
                   <ArrowDown className="h-3 w-3" />
@@ -315,8 +327,8 @@ export const SectionOrderSettings: React.FC<SectionOrderSettingsProps> = ({
         <Alert>
           <AlertDescription className="text-xs">
             {formLang === "ar"
-              ? "💡 نصيحة: اسحب الأقسام لإعادة ترتيبها، أو استخدم الأزرار لنقلها لأعلى أو لأسفل."
-              : "💡 Tip: Drag sections to reorder them, or use the buttons to move them up or down."}
+              ? "يمكنك سحب الأقسام لإعادة ترتيبها، أو استخدام الأسهم لتحريكها لأعلى ولأسفل."
+              : "Drag sections to reorder them, or use the arrows to move them up and down."}
           </AlertDescription>
         </Alert>
       </CardContent>

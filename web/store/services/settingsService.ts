@@ -108,16 +108,89 @@ export interface NavbarLink {
   isExternal: boolean;
 }
 
+export interface HeroTextSizes {
+  titleMobile: number;
+  titleDesktop: number;
+  subtitleMobile: number;
+  subtitleDesktop: number;
+}
+
+export interface MethodologyStep {
+  title: { ar: string; en: string };
+  subtitle: { ar: string; en: string };
+  description: { ar: string; en: string };
+}
+
+export const DEFAULT_HERO_TEXT_SIZES: HeroTextSizes = {
+  titleMobile: 40,
+  titleDesktop: 72,
+  subtitleMobile: 18,
+  subtitleDesktop: 24,
+};
+
+export const DEFAULT_METHODOLOGY_TITLE = {
+  ar: "رحلة النجاح",
+  en: "Journey to Success",
+};
+
+export const DEFAULT_METHODOLOGY_TITLE_HIGHLIGHT = {
+  ar: "معنا",
+  en: "With Us",
+};
+
+export const DEFAULT_METHODOLOGY_SUBTITLE = {
+  ar: "منهجية عمل مدروسة لضمان تحقيق أهدافك",
+  en: "A thoughtful methodology to ensure achieving your goals",
+};
+
+export const DEFAULT_METHODOLOGY_STEPS: MethodologyStep[] = [
+  {
+    title: { ar: "التحليل", en: "Analysis" },
+    subtitle: { ar: "تحليل", en: "Analyze" },
+    description: {
+      ar: "دراسة السوق والمنافسين وفهم احتياجات العميل بعمق",
+      en: "Market and competitor study, deep understanding of client needs",
+    },
+  },
+  {
+    title: { ar: "التخطيط", en: "Planning" },
+    subtitle: { ar: "تخطيط", en: "Plan" },
+    description: {
+      ar: "رسم خارطة طريق واضحة واستراتيجية محكمة",
+      en: "Drawing a clear roadmap and solid strategy",
+    },
+  },
+  {
+    title: { ar: "التنفيذ", en: "Execution" },
+    subtitle: { ar: "تنفيذ", en: "Execute" },
+    description: {
+      ar: "إنتاج وتطوير وفق أعلى معايير الجودة العالمية",
+      en: "Production and development according to the highest global quality standards",
+    },
+  },
+  {
+    title: { ar: "النمو", en: "Growth" },
+    subtitle: { ar: "نمو", en: "Grow" },
+    description: {
+      ar: "تسليم، متابعة، وتحسين مستمر لضمان استدامة النمو",
+      en: "Delivery, follow-up, and continuous improvement to ensure sustainable growth",
+    },
+  },
+];
+
 export interface SectionConfig {
   _id?: string;
   badge?: { ar: string; en: string };
   title: { ar: string; en: string };
+  titleHighlight?: { ar: string; en: string };
   subtitle: { ar: string; en: string };
   content: { ar: string; en: string };
   buttonText: { ar: string; en: string };
   buttonLink: string;
   isEnabled: boolean;
   backgroundImage?: string;
+  textSizes?: HeroTextSizes;
+  steps?: MethodologyStep[];
   order?: number;
 }
 

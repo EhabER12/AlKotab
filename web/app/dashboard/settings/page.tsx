@@ -47,6 +47,12 @@ import {
   HeroStatsSettings as HeroStatsSettingsType,
   ArticlesPageHeroSettings as ArticlesPageHeroSettingsType,
   HomepageArticlesSectionSettings as HomepageArticlesSectionSettingsType,
+  DEFAULT_HERO_TEXT_SIZES,
+  DEFAULT_METHODOLOGY_STEPS,
+  DEFAULT_METHODOLOGY_SUBTITLE,
+  DEFAULT_METHODOLOGY_TITLE,
+  DEFAULT_METHODOLOGY_TITLE_HIGHLIGHT,
+  type MethodologyStep,
 } from "@/store/services/settingsService";
 import { resetSettingsStatus } from "@/store/slices/settingsSlice";
 import { revalidateSettings } from "@/app/actions/settings";
@@ -149,6 +155,28 @@ const defaultHomepageArticlesSection: HomepageArticlesSectionSettingsType = {
   viewAllText: { ar: "", en: "View All Articles" },
 };
 
+const mergeMethodologySteps = (
+  steps?: MethodologyStep[]
+): MethodologyStep[] =>
+  DEFAULT_METHODOLOGY_STEPS.map((defaultStep, index) => {
+    const step = steps?.[index];
+
+    return {
+      title: {
+        ...defaultStep.title,
+        ...(step?.title || {}),
+      },
+      subtitle: {
+        ...defaultStep.subtitle,
+        ...(step?.subtitle || {}),
+      },
+      description: {
+        ...defaultStep.description,
+        ...(step?.description || {}),
+      },
+    };
+  });
+
 export default function SettingsDashboardPage() {
   const dispatch = useAppDispatch();
   const { t, isRtl } = useAdminLocale();
@@ -167,11 +195,11 @@ export default function SettingsDashboardPage() {
   const [activeTab, setActiveTab] = useState("general");
   const [navbarLinks, setNavbarLinks] = useState<NavbarLink[]>([]);
   const [homepageSections, setHomepageSections] = useState<HomepageSections>({
-    hero: { badge: { ar: "", en: "" }, title: { ar: "", en: "" }, subtitle: { ar: "", en: "" }, content: { ar: "", en: "" }, buttonText: { ar: "", en: "" }, buttonLink: "", isEnabled: true, order: 0 },
+    hero: { badge: { ar: "", en: "" }, title: { ar: "", en: "" }, subtitle: { ar: "", en: "" }, content: { ar: "", en: "" }, buttonText: { ar: "", en: "" }, buttonLink: "", isEnabled: true, textSizes: DEFAULT_HERO_TEXT_SIZES, order: 0 },
     features: { badge: { ar: "", en: "" }, title: { ar: "", en: "" }, subtitle: { ar: "", en: "" }, content: { ar: "", en: "" }, buttonText: { ar: "", en: "" }, buttonLink: "", isEnabled: true, order: 1 },
     services: { badge: { ar: "", en: "" }, title: { ar: "", en: "" }, subtitle: { ar: "", en: "" }, content: { ar: "", en: "" }, buttonText: { ar: "", en: "" }, buttonLink: "", isEnabled: true, order: 2 },
     stats: { badge: { ar: "", en: "" }, title: { ar: "", en: "" }, subtitle: { ar: "", en: "" }, content: { ar: "", en: "" }, buttonText: { ar: "", en: "" }, buttonLink: "", isEnabled: true, order: 3 },
-    about: { badge: { ar: "", en: "" }, title: { ar: "", en: "" }, subtitle: { ar: "", en: "" }, content: { ar: "", en: "" }, buttonText: { ar: "", en: "" }, buttonLink: "", isEnabled: true, order: 4 },
+    about: { badge: { ar: "", en: "" }, title: DEFAULT_METHODOLOGY_TITLE, titleHighlight: DEFAULT_METHODOLOGY_TITLE_HIGHLIGHT, subtitle: DEFAULT_METHODOLOGY_SUBTITLE, content: { ar: "", en: "" }, buttonText: { ar: "", en: "" }, buttonLink: "", isEnabled: true, steps: DEFAULT_METHODOLOGY_STEPS, order: 4 },
     cta: { badge: { ar: "", en: "" }, title: { ar: "", en: "" }, subtitle: { ar: "", en: "" }, content: { ar: "", en: "" }, buttonText: { ar: "", en: "" }, buttonLink: "", isEnabled: true, order: 5 },
     testimonials: { badge: { ar: "", en: "" }, title: { ar: "", en: "" }, subtitle: { ar: "", en: "" }, content: { ar: "", en: "" }, buttonText: { ar: "", en: "" }, buttonLink: "", isEnabled: true, order: 6 },
   });
@@ -392,8 +420,38 @@ export default function SettingsDashboardPage() {
         setNavbarLinks(settings.navbarLinks);
       }
 
-      if (settings.homepageSections) {
-        setHomepageSections(settings.homepageSections);
+      const homepageSectionsFromSettings = settings.homepageSections;
+
+      if (homepageSectionsFromSettings) {
+        setHomepageSections((prev) => ({
+          ...prev,
+          ...homepageSectionsFromSettings,
+          hero: {
+            ...prev.hero,
+            ...(homepageSectionsFromSettings.hero || {}),
+            textSizes: {
+              ...DEFAULT_HERO_TEXT_SIZES,
+              ...(homepageSectionsFromSettings.hero?.textSizes || {}),
+            },
+          },
+          about: {
+            ...prev.about,
+            ...(homepageSectionsFromSettings.about || {}),
+            title: {
+              ...DEFAULT_METHODOLOGY_TITLE,
+              ...(homepageSectionsFromSettings.about?.title || {}),
+            },
+            titleHighlight: {
+              ...DEFAULT_METHODOLOGY_TITLE_HIGHLIGHT,
+              ...(homepageSectionsFromSettings.about?.titleHighlight || {}),
+            },
+            subtitle: {
+              ...DEFAULT_METHODOLOGY_SUBTITLE,
+              ...(homepageSectionsFromSettings.about?.subtitle || {}),
+            },
+            steps: mergeMethodologySteps(homepageSectionsFromSettings.about?.steps),
+          },
+        }));
       }
 
       if (settings.promoModal) {

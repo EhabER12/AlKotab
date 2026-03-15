@@ -15,7 +15,10 @@ import {
   Briefcase,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { PublicWebsiteSettingsData } from "@/store/services/settingsService";
+import {
+  DEFAULT_HERO_TEXT_SIZES,
+  PublicWebsiteSettingsData,
+} from "@/store/services/settingsService";
 
 export function HeroSection({
   locale,
@@ -31,6 +34,12 @@ export function HeroSection({
 
   const heroSettings = settings?.homepageSections?.hero;
   const showDynamic = heroSettings?.isEnabled;
+  const heroTextSizes = {
+    ...DEFAULT_HERO_TEXT_SIZES,
+    ...(heroSettings?.textSizes || {}),
+  };
+  const titleFontSize = `clamp(${heroTextSizes.titleMobile}px, 6vw, ${heroTextSizes.titleDesktop}px)`;
+  const subtitleFontSize = `clamp(${heroTextSizes.subtitleMobile}px, 2.5vw, ${heroTextSizes.subtitleDesktop}px)`;
 
   const title = showDynamic
     ? isRtl
@@ -234,13 +243,19 @@ export function HeroSection({
             </div>
 
             {/* Main Headline */}
-            <h1 className="hero-title text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-[1.1]">
+            <h1
+              className="hero-title mb-6 font-bold leading-[1.1] text-white"
+              style={{ fontSize: titleFontSize }}
+            >
               {title}
               {!showDynamic && <span className="block text-genoun-gold mt-2">{t("title2")}</span>}
             </h1>
 
             {/* Subheadline */}
-            <p className="hero-subtitle text-lg sm:text-xl text-white/70 mb-8 leading-relaxed max-w-xl">
+            <p
+              className="hero-subtitle mb-8 max-w-xl leading-relaxed text-white/70"
+              style={{ fontSize: subtitleFontSize }}
+            >
               {subtitle}
               <span className="text-genoun-gold font-medium">
                 {" "}
