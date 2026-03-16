@@ -9,6 +9,11 @@ module.exports = {
       env: {
         NODE_ENV: "production",
         PORT: 5001,
+        PUPPETEER_EXECUTABLE_PATH:
+          process.env.PUPPETEER_EXECUTABLE_PATH ||
+          "/usr/bin/google-chrome-stable",
+        WHATSAPP_AUTH_PATH:
+          process.env.WHATSAPP_AUTH_PATH || "/var/www/alkotab/.wwebjs_auth",
       },
       error_file: "/var/log/pm2/alkotab-api-error.log",
       out_file: "/var/log/pm2/alkotab-api-out.log",

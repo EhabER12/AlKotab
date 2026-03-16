@@ -8,7 +8,9 @@ module.exports = {
             exec_mode: 'cluster',
             env: {
                 NODE_ENV: 'production',
-                PORT: 5000
+                PORT: 5000,
+                PUPPETEER_EXECUTABLE_PATH: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/google-chrome-stable',
+                WHATSAPP_AUTH_PATH: process.env.WHATSAPP_AUTH_PATH || '/var/www/genoun-main/.wwebjs_auth'
             },
             error_file: '/var/log/pm2/genoun-api-error.log',
             out_file: '/var/log/pm2/genoun-api-out.log',

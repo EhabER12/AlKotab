@@ -106,8 +106,10 @@ class WhatsAppWebManager {
           )
         : null,
       "/usr/bin/google-chrome",
+      "/usr/bin/google-chrome-stable",
       "/usr/bin/chromium-browser",
       "/usr/bin/chromium",
+      "/snap/bin/chromium",
       "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     ].filter(Boolean);
 
