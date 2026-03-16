@@ -55,6 +55,12 @@ export interface CreateStudentMemberData {
   packagePrice?: number;
 }
 
+const getApiErrorMessage = (error: any) =>
+  error.response?.data?.message ||
+  error.response?.data?.error?.message ||
+  error.message ||
+  "Request failed";
+
 // Get all student members
 export const getStudentMembers = createAsyncThunk(
   "studentMembers/getAll",
@@ -242,4 +248,69 @@ export const exportStudentMembers = async (filters: {
   });
 
   return response.data;
+};
+
+export interface SendStudentReminderResponse {
+  success: boolean;
+  message?: string;
+  phone?: string;
+}
+
+export interface SendBulkStudentReminderResponse {
+  success: boolean;
+  message?: string;
+  summary?: {
+    scope?: string;
+    total: number;
+    successful: number;
+    failed: number;
+  };
+  results?: Array<{
+    memberId: string;
+    name: BilingualText;
+    phone: string;
+    success: boolean;
+    error?: string;
+  }>;
+}
+
+export const sendStudentMemberWhatsAppReminder = async ({
+  id,
+  messageTemplate,
+}: {
+  id: string;
+  messageTemplate?: string;
+}) => {
+  try {
+    const response = await axios.post(`/student-members/${id}/whatsapp`, {
+      messageTemplate,
+    });
+    return response.data as SendStudentReminderResponse;
+  } catch (error: any) {
+    throw new Error(getApiErrorMessage(error));
+  }
+};
+
+export const sendBulkStudentMemberWhatsAppReminders = async ({
+  memberIds,
+  messageTemplate,
+  scope = "overdue",
+  remindBeforeDays = 5,
+}: {
+  memberIds?: string[];
+  messageTemplate?: string;
+  scope?: "due_soon" | "overdue" | "all_due";
+  remindBeforeDays?: number;
+}) => {
+  try {
+    const response = await axios.post("/student-members/bulk-reminders", {
+      memberIds,
+      messageTemplate,
+      scope,
+      remindBeforeDays,
+    });
+    return response.data as SendBulkStudentReminderResponse;
+  } catch (error: any) {
+    throw new Error(getApiErrorMessage(error));
+  }
 };

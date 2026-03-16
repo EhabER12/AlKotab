@@ -390,6 +390,18 @@ export interface HeroStatsSettings {
 export interface WebsiteSettingsData {
   whatsappConnected: boolean;
   whatsappQrCode?: string;
+  whatsappConnectionStatus?:
+    | "disconnected"
+    | "initializing"
+    | "qr"
+    | "authenticated"
+    | "connected"
+    | "auth_failure"
+    | "error";
+  whatsappPhoneNumber?: string;
+  whatsappDisplayName?: string;
+  whatsappLastError?: string;
+  whatsappLastConnectedAt?: string;
   qrCode?: string;
   _id: string;
   siteName: string;
@@ -552,7 +564,11 @@ export interface WhatsAppConnectResponse {
   success: boolean;
   data: {
     status: string;
+    connected?: boolean;
     qrCode?: string;
+    phoneNumber?: string;
+    displayName?: string;
+    lastError?: string;
   };
   message: string | null;
 }
@@ -561,6 +577,7 @@ export interface WhatsAppDisconnectResponse {
   success: boolean;
   data: {
     status: string;
+    connected?: boolean;
   };
   message: string | null;
 }
@@ -568,10 +585,17 @@ export interface WhatsAppDisconnectResponse {
 export interface WhatsAppTestMessageResponse {
   success: boolean;
   data: {
-    status: string;
+    id?: string;
+    to?: string;
   };
   message: string | null;
 }
+
+const getApiErrorMessage = (error: any) =>
+  error.response?.data?.message ||
+  error.response?.data?.error?.message ||
+  error.message ||
+  error.toString();
 
 export const connectWhatsAppThunk = createAsyncThunk<
   WhatsAppConnectResponse,
@@ -583,11 +607,7 @@ export const connectWhatsAppThunk = createAsyncThunk<
 
     return response.data as WhatsAppConnectResponse;
   } catch (error: any) {
-    const message =
-      (error.response && error.response.data && error.response.data.message) ||
-      error.message ||
-      error.toString();
-    return thunkAPI.rejectWithValue(message);
+    return thunkAPI.rejectWithValue(getApiErrorMessage(error));
   }
 });
 
@@ -604,11 +624,7 @@ export const disconnectWhatsAppThunk = createAsyncThunk<
 
     return response.data as WhatsAppDisconnectResponse;
   } catch (error: any) {
-    const message =
-      (error.response && error.response.data && error.response.data.message) ||
-      error.message ||
-      error.toString();
-    return thunkAPI.rejectWithValue(message);
+    return thunkAPI.rejectWithValue(getApiErrorMessage(error));
   }
 });
 
@@ -625,11 +641,7 @@ export const sendWhatsAppTestMessageThunk = createAsyncThunk<
 
     return response.data as WhatsAppTestMessageResponse;
   } catch (error: any) {
-    const message =
-      (error.response && error.response.data && error.response.data.message) ||
-      error.message ||
-      error.toString();
-    return thunkAPI.rejectWithValue(message);
+    return thunkAPI.rejectWithValue(getApiErrorMessage(error));
   }
 });
 

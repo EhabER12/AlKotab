@@ -3,6 +3,7 @@ import emailTemplateService from "../services/emailTemplateService.js";
 import { ApiError } from "../utils/apiError.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import { EmailService } from "../services/emailService.js";
+import whatsappService from "../services/whatsappNotificationService.js";
 
 const settingsService = new SettingsService();
 const emailService = new EmailService();
@@ -110,6 +111,66 @@ export const updateSettings = async (req, res, next) => {
     }
 
     return ApiResponse.success(res, settings, "Settings updated successfully");
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Connect WhatsApp client and generate QR code if needed
+// @route   POST /api/settings/whatsapp/connect
+// @access  Private/Admin
+export const connectWhatsApp = async (req, res, next) => {
+  try {
+    const status = await whatsappService.connect();
+
+    return ApiResponse.success(
+      res,
+      status,
+      status.connected
+        ? "WhatsApp is already connected"
+        : status.qrCode
+          ? "Scan the QR code to connect WhatsApp"
+          : "WhatsApp connection has been initialized"
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Disconnect WhatsApp client and clear local session
+// @route   POST /api/settings/whatsapp/disconnect
+// @access  Private/Admin
+export const disconnectWhatsApp = async (req, res, next) => {
+  try {
+    const status = await whatsappService.disconnect();
+
+    return ApiResponse.success(res, status, "WhatsApp disconnected successfully");
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Send WhatsApp test message
+// @route   POST /api/settings/whatsapp/test-message
+// @access  Private/Admin
+export const sendWhatsAppTestMessage = async (req, res, next) => {
+  try {
+    const { number, message } = req.body;
+
+    if (!number) {
+      throw new ApiError(400, "Phone number is required");
+    }
+
+    const result = await whatsappService.sendMessage(
+      number,
+      message || "رسالة اختبار من إعدادات لوحة تحكم Genoun"
+    );
+
+    return ApiResponse.success(
+      res,
+      result.data || result,
+      "Test WhatsApp message sent successfully"
+    );
   } catch (error) {
     next(error);
   }

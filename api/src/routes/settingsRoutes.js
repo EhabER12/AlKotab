@@ -2,6 +2,9 @@ import express from "express";
 import {
   getSettings,
   updateSettings,
+  connectWhatsApp,
+  disconnectWhatsApp,
+  sendWhatsAppTestMessage,
   testEmailConnection,
   testEmailNotification,
   getPublicSettings,
@@ -75,6 +78,26 @@ router.put(
   updateSettings
 );
 
+router.post(
+  "/whatsapp/connect",
+  protect,
+  authorize("admin"),
+  connectWhatsApp
+);
+
+router.post(
+  "/whatsapp/disconnect",
+  protect,
+  authorize("admin"),
+  disconnectWhatsApp
+);
+
+router.post(
+  "/whatsapp/test-message",
+  protect,
+  authorize("admin"),
+  sendWhatsAppTestMessage
+);
 
 // Email routes
 router.post(

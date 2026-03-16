@@ -1,8 +1,6 @@
 import { StudentMemberService } from "../services/studentMemberService.js";
-import { SettingsRepository } from "../repositories/settingsRepository.js";
 
 const studentMemberService = new StudentMemberService();
-const settingsRepository = new SettingsRepository();
 
 // @desc    Get all student members
 // @route   GET /api/student-members
@@ -162,7 +160,6 @@ export const renewSubscription = async (req, res, next) => {
 // @access  Private (Admin, Moderator)
 export const getMembersDueSoon = async (req, res, next) => {
   try {
-    const settings = await settingsRepository.getSettings();
     const remindBeforeDays = req.query.remindBeforeDays || 2;
 
     const members = await studentMemberService.getMembersDueForReminder(
@@ -184,7 +181,6 @@ export const getMembersDueSoon = async (req, res, next) => {
 // @access  Private (Admin, Moderator)
 export const sendWhatsAppReminder = async (req, res, next) => {
   try {
-    const settings = await settingsRepository.getSettings();
     const messageTemplate = req.body.messageTemplate || null;
 
     const result = await studentMemberService.sendReminderToMember(
@@ -206,14 +202,17 @@ export const sendWhatsAppReminder = async (req, res, next) => {
 // @access  Private (Admin, Moderator)
 export const sendBulkReminders = async (req, res, next) => {
   try {
-    const settings = await settingsRepository.getSettings();
     const remindBeforeDays = req.body.remindBeforeDays || 2;
     const messageTemplate = req.body.messageTemplate || null;
+    const scope = req.body.scope || "due_soon";
+    const memberIds = Array.isArray(req.body.memberIds) ? req.body.memberIds : [];
 
-    const results = await studentMemberService.sendBulkReminders(
-      parseInt(remindBeforeDays),
-      messageTemplate
-    );
+    const results = await studentMemberService.sendBulkReminders({
+      remindBeforeDays: parseInt(remindBeforeDays),
+      messageTemplate,
+      scope,
+      memberIds,
+    });
 
     const successCount = results.filter((r) => r.success).length;
     const failedCount = results.filter((r) => !r.success).length;
@@ -223,6 +222,7 @@ export const sendBulkReminders = async (req, res, next) => {
       message: `Reminders sent: ${successCount} successful, ${failedCount} failed`,
       results,
       summary: {
+        scope,
         total: results.length,
         successful: successCount,
         failed: failedCount,

@@ -98,11 +98,20 @@ const settingsSlice = createSlice({
       .addCase(connectWhatsAppThunk.pending, (state) => {
         state.isLoading = true;
       })
-      .addCase(connectWhatsAppThunk.fulfilled, (state) => {
+      .addCase(connectWhatsAppThunk.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isSuccess = true;
         state.message =
           "WhatsApp connection initiated. Please scan the QR code.";
+        if (state.settings) {
+          state.settings.whatsappConnected = !!action.payload.data.connected;
+          state.settings.whatsappConnectionStatus =
+            action.payload.data.status as WebsiteSettingsData["whatsappConnectionStatus"];
+          state.settings.whatsappQrCode = action.payload.data.qrCode;
+          state.settings.whatsappPhoneNumber = action.payload.data.phoneNumber;
+          state.settings.whatsappDisplayName = action.payload.data.displayName;
+          state.settings.whatsappLastError = action.payload.data.lastError;
+        }
       })
       .addCase(connectWhatsAppThunk.rejected, (state, action) => {
         state.isLoading = false;
@@ -114,13 +123,18 @@ const settingsSlice = createSlice({
       .addCase(disconnectWhatsAppThunk.pending, (state) => {
         state.isLoading = true;
       })
-      .addCase(disconnectWhatsAppThunk.fulfilled, (state) => {
+      .addCase(disconnectWhatsAppThunk.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isSuccess = true;
         state.message = "WhatsApp successfully disconnected.";
         if (state.settings) {
           state.settings.whatsappConnected = false;
           state.settings.whatsappQrCode = undefined;
+          state.settings.whatsappConnectionStatus =
+            action.payload.data.status as WebsiteSettingsData["whatsappConnectionStatus"];
+          state.settings.whatsappPhoneNumber = "";
+          state.settings.whatsappDisplayName = "";
+          state.settings.whatsappLastError = "";
         }
       })
       .addCase(disconnectWhatsAppThunk.rejected, (state, action) => {

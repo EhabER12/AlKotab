@@ -886,6 +886,34 @@ const settingsSchema = new mongoose.Schema(
     whatsappQrCode: {
       type: String,
     },
+    whatsappConnectionStatus: {
+      type: String,
+      enum: [
+        "disconnected",
+        "initializing",
+        "qr",
+        "authenticated",
+        "connected",
+        "auth_failure",
+        "error",
+      ],
+      default: "disconnected",
+    },
+    whatsappPhoneNumber: {
+      type: String,
+      default: "",
+    },
+    whatsappDisplayName: {
+      type: String,
+      default: "",
+    },
+    whatsappLastError: {
+      type: String,
+      default: "",
+    },
+    whatsappLastConnectedAt: {
+      type: Date,
+    },
     headerDisplay: {
       type: headerDisplaySchema,
       default: () => ({}),

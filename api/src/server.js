@@ -47,6 +47,7 @@ import couponRoutes from "./routes/couponRoutes.js";
 import { FormService } from "./services/formService.js";
 import { AiArticleSchedulerService } from "./services/aiArticleSchedulerService.js";
 import { StudentMemberSchedulerService } from "./services/studentMemberSchedulerService.js";
+import whatsappService from "./services/whatsappNotificationService.js";
 import User from "./models/userModel.js";
 import Certificate from "./models/certificateModel.js";
 import mongoose from "mongoose";
@@ -152,6 +153,22 @@ const initializeStudentMemberScheduler = async () => {
   }
 };
 
+const initializeWhatsApp = async () => {
+  try {
+    const status = await whatsappService.restoreSession();
+
+    logger.info("WhatsApp service state restored", {
+      status: status.status,
+      connected: status.connected,
+      sessionExists: status.sessionExists,
+    });
+  } catch (error) {
+    logger.warn("Failed to restore WhatsApp service state", {
+      error: error.message,
+    });
+  }
+};
+
 // Rebuild certificate indexes to fix unique constraint issues
 const rebuildCertificateIndexes = async () => {
   try {
@@ -200,6 +217,7 @@ const initializeApp = async () => {
     await initializeSystemForms();
     await initializeAiScheduler();
     await initializeStudentMemberScheduler();
+    await initializeWhatsApp();
     logger.success("Application initialized successfully");
   } catch (error) {
     logger.error("Failed to initialize application", { error: error.message });

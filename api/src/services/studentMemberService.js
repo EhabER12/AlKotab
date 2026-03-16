@@ -2,7 +2,13 @@ import StudentMember from "../models/studentMemberModel.js";
 import { ApiError } from "../utils/apiError.js";
 import { WhatsappNotificationService } from "./whatsappNotificationService.js";
 import logger from "../utils/logger.js";
-import { differenceInDays, addDays, parse as parseDate, isValid } from "date-fns";
+import {
+  addDays,
+  differenceInDays,
+  endOfDay,
+  isValid,
+  startOfDay,
+} from "date-fns";
 import Package from "../models/packageModel.js";
 import TeacherGroup from "../models/teacherGroupModel.js";
 import Settings from "../models/settingsModel.js";
@@ -586,12 +592,68 @@ export class StudentMemberService {
     }));
   }
 
+  async getMembersForReminder({
+    remindBeforeDays = 2,
+    scope = "due_soon",
+    memberIds = [],
+  } = {}) {
+    const query = {
+      status: { $in: ["active", "due_soon", "overdue"] },
+    };
+
+    if (Array.isArray(memberIds) && memberIds.length > 0) {
+      query._id = { $in: memberIds };
+    } else {
+      const today = startOfDay(new Date());
+      const dueThreshold = endOfDay(addDays(today, remindBeforeDays));
+
+      if (scope === "overdue") {
+        query.$or = [
+          { status: "overdue" },
+          { nextDueDate: { $lt: today } },
+        ];
+      } else if (scope === "all_due") {
+        query.nextDueDate = { $lte: dueThreshold };
+      } else {
+        query.status = { $in: ["active", "due_soon"] };
+        query.nextDueDate = {
+          $gte: today,
+          $lte: dueThreshold,
+        };
+      }
+    }
+
+    return StudentMember.find(query)
+      .populate("assignedTeacherId", "fullName name email")
+      .populate("packageId", "name")
+      .sort({ nextDueDate: 1 });
+  }
+
+  getLocalizedValue(value) {
+    if (!value) return "";
+    if (typeof value === "string") return value;
+    return value.ar || value.en || "";
+  }
+
+  getTeacherName(member) {
+    if (!member) return "";
+
+    if (member.assignedTeacherId?.fullName) {
+      return this.getLocalizedValue(member.assignedTeacherId.fullName);
+    }
+
+    if (member.assignedTeacherId?.name) {
+      return this.getLocalizedValue(member.assignedTeacherId.name);
+    }
+
+    return member.assignedTeacherName || "";
+  }
+
   // Send WhatsApp reminder to a member
   async sendReminderToMember(memberId, messageTemplate) {
-    const member = await StudentMember.findById(memberId).populate(
-      "assignedTeacherId",
-      "name"
-    );
+    const member = await StudentMember.findById(memberId)
+      .populate("assignedTeacherId", "fullName name email")
+      .populate("packageId", "name");
 
     if (!member) {
       throw new ApiError(404, "Member not found");
@@ -602,7 +664,7 @@ export class StudentMemberService {
     }
 
     // Build message from template
-    const message = this.buildReminderMessage(member, messageTemplate);
+    const message = this.buildEnhancedReminderMessage(member, messageTemplate);
 
     // Send WhatsApp message
     try {
@@ -633,8 +695,17 @@ export class StudentMemberService {
   }
 
   // Send bulk reminders to all due members
-  async sendBulkReminders(remindBeforeDays = 2, messageTemplate) {
-    const members = await this.getMembersDueForReminder(remindBeforeDays);
+  async sendBulkReminders({
+    remindBeforeDays = 2,
+    messageTemplate = null,
+    scope = "due_soon",
+    memberIds = [],
+  } = {}) {
+    const members = await this.getMembersForReminder({
+      remindBeforeDays,
+      scope,
+      memberIds,
+    });
 
     const results = [];
 
@@ -660,11 +731,65 @@ export class StudentMemberService {
 
     logger.info("Bulk reminders sent", {
       total: members.length,
+      scope,
       successful: results.filter((r) => r.success).length,
       failed: results.filter((r) => !r.success).length,
     });
 
     return results;
+  }
+
+  buildEnhancedReminderMessage(member, template) {
+    const fallbackTemplate = `السلام عليكم {{name}}،
+
+نذكركم بأن موعد تجديد الاشتراك {{statusLabel}}.
+تاريخ الاستحقاق: {{dueDate}}
+{{daysSummary}}
+{{teacherLine}}
+{{packageLine}}
+
+للتجديد أو الاستفسار يمكنكم التواصل معنا على هذا الرقم.
+مع خالص التحية`;
+
+    const messageTemplate = template || fallbackTemplate;
+    const dueDate = new Date(member.nextDueDate).toLocaleDateString("ar-EG");
+    const rawDaysLeft = differenceInDays(
+      startOfDay(new Date(member.nextDueDate)),
+      startOfDay(new Date())
+    );
+    const teacherName = this.getTeacherName(member);
+    const packageName = this.getLocalizedValue(member.packageId?.name);
+    const statusLabel =
+      rawDaysLeft < 0
+        ? "متأخر"
+        : rawDaysLeft === 0
+          ? "اليوم"
+          : "قريب";
+    const daysSummary =
+      rawDaysLeft < 0
+        ? `الاشتراك متأخر منذ ${Math.abs(rawDaysLeft)} يوم`
+        : rawDaysLeft === 0
+          ? "موعد التجديد اليوم"
+          : `متبقي ${rawDaysLeft} يوم على موعد التجديد`;
+    const teacherLine = teacherName ? `المعلم/المعلمة: ${teacherName}` : "";
+    const packageLine = packageName ? `الباقة: ${packageName}` : "";
+    const memberName = this.getLocalizedValue(member.name);
+
+    return messageTemplate
+      .replace(/{{name}}/g, memberName)
+      .replace(/{{dueDate}}/g, dueDate)
+      .replace(/{{daysLeft}}/g, String(Math.max(rawDaysLeft, 0)))
+      .replace(
+        /{{daysOverdue}}/g,
+        String(rawDaysLeft < 0 ? Math.abs(rawDaysLeft) : 0)
+      )
+      .replace(/{{daysSummary}}/g, daysSummary)
+      .replace(/{{statusLabel}}/g, statusLabel)
+      .replace(/{{teacherLine}}/g, teacherLine)
+      .replace(/{{teacherName}}/g, teacherName)
+      .replace(/{{packageLine}}/g, packageLine)
+      .replace(/{{packageName}}/g, packageName)
+      .replace(/{{phone}}/g, member.phone);
   }
 
   // Build reminder message from template

@@ -90,6 +90,7 @@ import { CoursesPageHeroSettings as CoursesPageHeroSettingsComponent } from "@/c
 import { BooksPageHeroSettings as BooksPageHeroSettingsComponent } from "@/components/dashboard/settings/BooksPageHeroSettings";
 import { ProductsPageHeroSettings as ProductsPageHeroSettingsComponent } from "@/components/dashboard/settings/ProductsPageHeroSettings";
 import { HeroStatsSettings as HeroStatsSettingsComponent } from "@/components/dashboard/settings/HeroStatsSettings";
+import { WhatsAppSettings } from "@/components/dashboard/settings/WhatsAppSettings";
 
 interface SettingsFormData extends Partial<WebsiteSettingsData> {
   logoFile?: File;
@@ -968,6 +969,9 @@ export default function SettingsDashboardPage() {
             </TabsTrigger>
             <TabsTrigger value="email">
               {isRtl ? "البريد الإلكتروني" : "Email"}
+            </TabsTrigger>
+            <TabsTrigger value="whatsapp">
+              {isRtl ? "واتساب" : "WhatsApp"}
             </TabsTrigger>
             <TabsTrigger value="currency">
               {isRtl ? "العملة وأسعار الصرف" : "Currency & Exchange"}
@@ -2518,6 +2522,14 @@ export default function SettingsDashboardPage() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="whatsapp" className="space-y-6">
+            <WhatsAppSettings
+              settings={settings}
+              isLoading={isLoading}
+              isRtl={isRtl}
+            />
+          </TabsContent>
+
           <TabsContent value="currency" className="space-y-6">
             <Card>
               <CardHeader>
@@ -2968,7 +2980,7 @@ export default function SettingsDashboardPage() {
         </Tabs>
 
         {/* Save Button */}
-        {activeTab !== "ai-articles" && (
+        {activeTab !== "ai-articles" && activeTab !== "whatsapp" && (
           <div className="sticky bottom-0 z-10 mt-6 flex justify-end border-t bg-background p-4 shadow-sm -mx-4 px-4 sm:-mx-6 sm:px-6">
             <Button
               type="submit"

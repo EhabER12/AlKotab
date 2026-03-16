@@ -61,10 +61,11 @@ export class StudentMemberSchedulerService {
 
       // 3. Send WhatsApp reminders
       const messageTemplate = this.getDefaultMessageTemplate();
-      const results = await this.studentMemberService.sendBulkReminders(
+      const results = await this.studentMemberService.sendBulkReminders({
         remindBeforeDays,
-        messageTemplate
-      );
+        messageTemplate,
+        scope: "due_soon",
+      });
 
       const successCount = results.filter((r) => r.success).length;
       const failedCount = results.filter((r) => !r.success).length;
