@@ -1,4 +1,5 @@
 import fs from "fs";
+import os from "os";
 import path from "path";
 import { fileURLToPath } from "url";
 import Settings from "../models/settingsModel.js";
@@ -21,8 +22,51 @@ class WhatsAppWebManager {
     this.modulesPromise = null;
     this.isDisconnecting = false;
     this.clientId = process.env.WHATSAPP_CLIENT_ID || "genoun-admin";
-    this.authPath = path.resolve(__dirname, "../../.wwebjs_auth");
+    this.authPath = path.resolve(
+      process.env.WHATSAPP_AUTH_PATH ||
+        path.join(process.cwd(), ".wwebjs_auth") ||
+        path.join(os.tmpdir(), "genoun-whatsapp-auth")
+    );
     this.sessionPath = path.join(this.authPath, `session-${this.clientId}`);
+  }
+
+  buildConnectError(error, executablePath) {
+    if (error instanceof ApiError) {
+      return error;
+    }
+
+    const message = String(error?.message || error || "");
+    const details = {
+      originalError: message,
+      authPath: this.authPath,
+      executablePath: executablePath || null,
+    };
+
+    if (/Could not find Chrome|Could not find expected browser/i.test(message)) {
+      return new ApiError(
+        500,
+        "Chrome or Chromium is not available on the server. Install it or set PUPPETEER_EXECUTABLE_PATH.",
+        details
+      );
+    }
+
+    if (/EACCES|EPERM|permission denied/i.test(message)) {
+      return new ApiError(
+        500,
+        "WhatsApp session storage is not writable. Set WHATSAPP_AUTH_PATH to a writable directory.",
+        details
+      );
+    }
+
+    if (/ENOENT/i.test(message) && executablePath) {
+      return new ApiError(
+        500,
+        `Configured Chrome path was not found: ${executablePath}`,
+        details
+      );
+    }
+
+    return new ApiError(500, "Failed to initialize WhatsApp client", details);
   }
 
   getBrowserExecutablePath() {
@@ -298,48 +342,48 @@ class WhatsAppWebManager {
     }
 
     this.initializationPromise = (async () => {
-      const { Client, LocalAuth, QRCode } = await this.getModules();
       const executablePath = this.getBrowserExecutablePath();
-
-      fs.mkdirSync(this.authPath, { recursive: true });
-
-      this.status = "initializing";
-      this.qrCode = "";
-      this.lastError = "";
-
-      await this.persistState({
-        whatsappConnected: false,
-        whatsappQrCode: "",
-        whatsappConnectionStatus: "initializing",
-        whatsappLastError: "",
-      });
-
-      const client = new Client({
-        authStrategy: new LocalAuth({
-          clientId: this.clientId,
-          dataPath: this.authPath,
-        }),
-        puppeteer: {
-          headless: true,
-          executablePath,
-          args: [
-            "--no-sandbox",
-            "--disable-setuid-sandbox",
-            "--disable-dev-shm-usage",
-            "--disable-gpu",
-          ],
-        },
-      });
-
-      this.attachListeners(client, QRCode);
-      this.client = client;
-
       try {
+        const { Client, LocalAuth, QRCode } = await this.getModules();
+
+        fs.mkdirSync(this.authPath, { recursive: true });
+
+        this.status = "initializing";
+        this.qrCode = "";
+        this.lastError = "";
+
+        await this.persistState({
+          whatsappConnected: false,
+          whatsappQrCode: "",
+          whatsappConnectionStatus: "initializing",
+          whatsappLastError: "",
+        });
+
+        const client = new Client({
+          authStrategy: new LocalAuth({
+            clientId: this.clientId,
+            dataPath: this.authPath,
+          }),
+          puppeteer: {
+            headless: true,
+            executablePath,
+            args: [
+              "--no-sandbox",
+              "--disable-setuid-sandbox",
+              "--disable-dev-shm-usage",
+              "--disable-gpu",
+            ],
+          },
+        });
+
+        this.attachListeners(client, QRCode);
+        this.client = client;
         await client.initialize();
       } catch (error) {
         this.client = null;
         this.status = "error";
-        this.lastError = error.message;
+        const apiError = this.buildConnectError(error, executablePath);
+        this.lastError = apiError.message;
 
         await this.persistState({
           whatsappConnected: false,
@@ -348,9 +392,7 @@ class WhatsAppWebManager {
           whatsappLastError: this.lastError,
         });
 
-        throw new ApiError(500, "Failed to initialize WhatsApp client", {
-          originalError: error.message,
-        });
+        throw apiError;
       }
     })();
 
