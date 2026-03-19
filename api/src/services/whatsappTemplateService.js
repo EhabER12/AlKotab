@@ -14,41 +14,42 @@ const DEFAULT_DELIVERY_SETTINGS = {
 
 const DEFAULT_TEMPLATES = [
   {
-    name: "general_broadcast",
+    name: "welcome_message",
     label: {
-      ar: "رسالة عامة",
-      en: "General Broadcast",
+      ar: "رسالة الترحيب",
+      en: "Welcome Message",
     },
-    type: "broadcast",
+    type: "welcome",
     order: 1,
     isActive: true,
     content: {
-      ar: "السلام عليكم {name}\n\n{data}",
-      en: "Hello {name},\n\n{data}",
+      ar: "مرحباً {name}،\n\nأهلاً بك معنا{groupLine}{teacherLine}.\n{data}",
+      en: "Hello {name},\n\nWelcome aboard{groupLine}{teacherLine}.\n{data}",
     },
     variables: [
       { name: "name", description: "Recipient name" },
-      { name: "data", description: "Main message content" },
+      { name: "groupLine", description: "Optional group phrase" },
+      { name: "teacherLine", description: "Optional teacher phrase" },
+      { name: "data", description: "Additional message body" },
     ],
   },
   {
-    name: "subscription_reminder",
+    name: "overdue_subscription",
     label: {
-      ar: "تذكير الاشتراك",
-      en: "Subscription Reminder",
+      ar: "الاشتراك المتأخر",
+      en: "Overdue Subscription",
     },
     type: "subscription",
     order: 2,
     isActive: true,
     content: {
-      ar: "السلام عليكم {name}،\n\nنذكركم بأن موعد تجديد الاشتراك {statusLabel}.\nتاريخ الاستحقاق: {dueDate}\n{daysSummary}\n{teacherLine}\n{packageLine}\n\nللتجديد أو الاستفسار يمكنكم التواصل معنا على هذا الرقم.\nمع خالص التحية",
-      en: "Hello {name},\n\nThis is a reminder that your subscription renewal is {statusLabel}.\nDue date: {dueDate}\n{daysSummary}\n{teacherLine}\n{packageLine}\n\nFor renewal or support, please reply to this number.",
+      ar: "السلام عليكم {name}،\n\nنذكركم بأن الاشتراك متأخر.\nتاريخ الاستحقاق: {dueDate}\n{daysSummary}\n{teacherLine}\n{packageLine}\n\nللتجديد أو الاستفسار يمكنكم التواصل معنا على هذا الرقم.\nمع خالص التحية",
+      en: "Hello {name},\n\nThis is a reminder that your subscription is overdue.\nDue date: {dueDate}\n{daysSummary}\n{teacherLine}\n{packageLine}\n\nFor renewal or support, please reply to this number.",
     },
     variables: [
       { name: "name", description: "Member name" },
       { name: "dueDate", description: "Renewal due date" },
-      { name: "statusLabel", description: "Reminder status label" },
-      { name: "daysSummary", description: "Renewal days summary" },
+      { name: "daysSummary", description: "Overdue days summary" },
       { name: "teacherLine", description: "Teacher line if available" },
       { name: "packageLine", description: "Package line if available" },
       { name: "teacherName", description: "Teacher name only" },
@@ -56,84 +57,12 @@ const DEFAULT_TEMPLATES = [
       { name: "phone", description: "Recipient phone number" },
     ],
   },
-  {
-    name: "student_added_to_group",
-    label: {
-      ar: "إضافة طالب إلى مجموعة",
-      en: "Student Added To Group",
-    },
-    type: "group",
-    order: 3,
-    isActive: true,
-    content: {
-      ar: "مرحباً {name}، لقد تمت إضافتك إلى مجموعة \"{groupName}\" {teacherLine}. بالتوفيق!",
-      en: "Hello {name}, you have been added to the \"{groupName}\" group {teacherLine}. Best of luck!",
-    },
-    variables: [
-      { name: "name", description: "Student name" },
-      { name: "groupName", description: "Group name" },
-      { name: "teacherLine", description: "Teacher phrase with name" },
-      { name: "teacherName", description: "Teacher name only" },
-    ],
-  },
-  {
-    name: "student_group_active",
-    label: {
-      ar: "تفعيل طالب في المجموعة",
-      en: "Student Group Activated",
-    },
-    type: "group_status",
-    order: 4,
-    isActive: true,
-    content: {
-      ar: "مرحباً {name}، تم تفعيل حالتك في مجموعة \"{groupName}\". نتطلع لرؤيتك في الحصص القادمة!",
-      en: "Hello {name}, your status in the \"{groupName}\" group is now active. We look forward to seeing you soon!",
-    },
-    variables: [
-      { name: "name", description: "Student name" },
-      { name: "groupName", description: "Group name" },
-    ],
-  },
-  {
-    name: "student_group_completed",
-    label: {
-      ar: "إكمال الطالب للمجموعة",
-      en: "Student Group Completed",
-    },
-    type: "group_status",
-    order: 5,
-    isActive: true,
-    content: {
-      ar: "تهانينا {name}! لقد أتممت دراستك في مجموعة \"{groupName}\". نتمنى لك دوام التوفيق والنجاح!",
-      en: "Congratulations {name}! You have completed your journey in the \"{groupName}\" group. Wishing you continued success!",
-    },
-    variables: [
-      { name: "name", description: "Student name" },
-      { name: "groupName", description: "Group name" },
-    ],
-  },
-  {
-    name: "new_form_submission",
-    label: {
-      ar: "إشعار نموذج جديد",
-      en: "New Form Submission",
-    },
-    type: "form",
-    order: 6,
-    isActive: true,
-    content: {
-      ar: "تم استلام طلب جديد من نموذج {formTitle}.\n\n{nameLine}{emailLine}{phoneLine}{data}",
-      en: "A new submission was received from {formTitle}.\n\n{nameLine}{emailLine}{phoneLine}{data}",
-    },
-    variables: [
-      { name: "formTitle", description: "Form title" },
-      { name: "nameLine", description: "Submitter name line" },
-      { name: "emailLine", description: "Submitter email line" },
-      { name: "phoneLine", description: "Submitter phone line" },
-      { name: "data", description: "Submission summary lines" },
-    ],
-  },
 ];
+
+const LEGACY_TEMPLATE_FALLBACKS = {
+  welcome_message: ["welcome_message", "student_added_to_group", "student_group_active"],
+  overdue_subscription: ["overdue_subscription", "subscription_reminder"],
+};
 
 const escapeRegExp = (value) =>
   String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -145,6 +74,7 @@ const normalizeTextValue = (value) => {
       .filter((item) => item !== undefined && item !== null && item !== "")
       .join(", ");
   }
+
   return String(value);
 };
 
@@ -187,40 +117,40 @@ class WhatsAppTemplateService {
     return DEFAULT_TEMPLATES.find((template) => template.name === name) || null;
   }
 
+  isAllowedTemplateName(name) {
+    return !!this.getDefaultTemplate(name);
+  }
+
   buildTemplatePayload(existingTemplate, patch = {}) {
     const defaultTemplate = this.getDefaultTemplate(
       patch.name || existingTemplate?.name
     );
 
+    if (!defaultTemplate) {
+      throw new ApiError(400, "This WhatsApp template is not supported");
+    }
+
     return {
-      name: patch.name || existingTemplate?.name || defaultTemplate?.name || "",
+      name: patch.name || existingTemplate?.name || defaultTemplate.name,
       label: this.mergeLocalizedText(
-        existingTemplate?.label || defaultTemplate?.label,
+        existingTemplate?.label || defaultTemplate.label,
         patch.label
       ),
-      type:
-        patch.type ||
-        existingTemplate?.type ||
-        defaultTemplate?.type ||
-        "custom",
+      type: defaultTemplate.type,
       content: this.mergeLocalizedText(
-        existingTemplate?.content || defaultTemplate?.content,
+        existingTemplate?.content || defaultTemplate.content,
         patch.content
       ),
       variables: this.normalizeVariables(
         patch.variables,
-        existingTemplate?.variables || defaultTemplate?.variables || []
+        existingTemplate?.variables || defaultTemplate.variables || []
       ),
       isActive:
         patch.isActive ??
         existingTemplate?.isActive ??
-        defaultTemplate?.isActive ??
+        defaultTemplate.isActive ??
         true,
-      order:
-        patch.order ??
-        existingTemplate?.order ??
-        defaultTemplate?.order ??
-        0,
+      order: defaultTemplate.order,
     };
   }
 
@@ -243,39 +173,66 @@ class WhatsAppTemplateService {
     };
   }
 
+  toPlainTemplate(template) {
+    if (!template) return null;
+    if (typeof template.toObject === "function") {
+      return template.toObject();
+    }
+    return {
+      ...template,
+      label: template.label || { ar: "", en: "" },
+      content: template.content || { ar: "", en: "" },
+      variables: Array.isArray(template.variables) ? template.variables : [],
+    };
+  }
+
+  findLegacyTemplate(existingTemplates = [], targetTemplateName) {
+    const candidateNames = LEGACY_TEMPLATE_FALLBACKS[targetTemplateName] || [
+      targetTemplateName,
+    ];
+
+    for (const candidateName of candidateNames) {
+      const match = existingTemplates.find(
+        (template) => template?.name === candidateName
+      );
+      if (match) {
+        return this.toPlainTemplate(match);
+      }
+    }
+
+    return null;
+  }
+
   async ensureDefaults() {
     const settings = await Settings.findOneOrCreate();
-    let hasChanges = false;
+    const currentTemplates = Array.isArray(settings.whatsappTemplates)
+      ? settings.whatsappTemplates.map((template) => this.toPlainTemplate(template))
+      : [];
 
     const normalizedDeliverySettings = this.normalizeDeliverySettings(
       settings.whatsappSettings?.toObject?.() || settings.whatsappSettings || {}
     );
 
-    if (
-      JSON.stringify(settings.whatsappSettings?.toObject?.() || settings.whatsappSettings || {}) !==
-      JSON.stringify(normalizedDeliverySettings)
-    ) {
-      settings.whatsappSettings = normalizedDeliverySettings;
-      hasChanges = true;
-    }
+    const normalizedTemplates = DEFAULT_TEMPLATES.map((defaultTemplate) =>
+      this.buildTemplatePayload(
+        this.findLegacyTemplate(currentTemplates, defaultTemplate.name),
+        { name: defaultTemplate.name }
+      )
+    );
 
-    if (!Array.isArray(settings.whatsappTemplates)) {
-      settings.whatsappTemplates = [];
-      hasChanges = true;
-    }
-
-    for (const template of DEFAULT_TEMPLATES) {
-      const existingTemplate = settings.whatsappTemplates.find(
-        (currentTemplate) => currentTemplate.name === template.name
-      );
-
-      if (!existingTemplate) {
-        settings.whatsappTemplates.push(template);
-        hasChanges = true;
-      }
-    }
+    const existingDeliverySettings = JSON.stringify(
+      settings.whatsappSettings?.toObject?.() || settings.whatsappSettings || {}
+    );
+    const nextDeliverySettings = JSON.stringify(normalizedDeliverySettings);
+    const existingTemplatesJson = JSON.stringify(currentTemplates);
+    const nextTemplatesJson = JSON.stringify(normalizedTemplates);
+    const hasChanges =
+      existingDeliverySettings !== nextDeliverySettings ||
+      existingTemplatesJson !== nextTemplatesJson;
 
     if (hasChanges) {
+      settings.whatsappSettings = normalizedDeliverySettings;
+      settings.whatsappTemplates = normalizedTemplates;
       settings.markModified("whatsappSettings");
       settings.markModified("whatsappTemplates");
       await settings.save();
@@ -318,20 +275,23 @@ class WhatsAppTemplateService {
       throw new ApiError(400, "Template name is required");
     }
 
+    if (!this.isAllowedTemplateName(data.name)) {
+      throw new ApiError(400, "Only the allowed WhatsApp templates can be edited");
+    }
+
     const settings = await this.ensureDefaults();
     const existingTemplate = settings.whatsappTemplates.find(
       (currentTemplate) => currentTemplate.name === data.name
     );
-    const payload = this.buildTemplatePayload(
-      existingTemplate?.toObject?.() || existingTemplate,
-      data
-    );
 
-    if (existingTemplate) {
-      Object.assign(existingTemplate, payload);
-    } else {
-      settings.whatsappTemplates.push(payload);
+    if (!existingTemplate) {
+      throw new ApiError(404, `WhatsApp template '${data.name}' not found`);
     }
+
+    Object.assign(
+      existingTemplate,
+      this.buildTemplatePayload(this.toPlainTemplate(existingTemplate), data)
+    );
 
     settings.whatsappSettings = {
       ...this.normalizeDeliverySettings(
@@ -339,6 +299,7 @@ class WhatsAppTemplateService {
       ),
       lastUpdated: new Date(),
     };
+
     settings.markModified("whatsappTemplates");
     settings.markModified("whatsappSettings");
     await settings.save();

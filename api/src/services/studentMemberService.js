@@ -711,6 +711,12 @@ export class StudentMemberService {
         (value) => this.getLocalizedValue(value)
       );
       const memberName = this.getLocalizedValue(member.name);
+      const isOverdueReminder =
+        member.status === "overdue" ||
+        differenceInDays(
+          startOfDay(new Date(member.nextDueDate)),
+          startOfDay(new Date())
+        ) < 0;
       const result = messageTemplate
         ? await this.whatsappService.sendMessage(
             member.phone,
@@ -720,15 +726,24 @@ export class StudentMemberService {
               lang: "ar",
             }
           )
-        : await this.whatsappService.sendTemplateMessage(
-            member.phone,
-            "subscription_reminder",
-            reminderVariables,
-            {
-              recipientName: memberName,
-              lang: "ar",
-            }
-          );
+        : isOverdueReminder
+          ? await this.whatsappService.sendTemplateMessage(
+              member.phone,
+              "overdue_subscription",
+              reminderVariables,
+              {
+                recipientName: memberName,
+                lang: "ar",
+              }
+            )
+          : await this.whatsappService.sendMessage(
+              member.phone,
+              this.buildEnhancedReminderMessage(member),
+              {
+                recipientName: memberName,
+                lang: "ar",
+              }
+            );
 
       if (result?.skipped) {
         return {

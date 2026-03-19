@@ -283,12 +283,12 @@ class TeacherGroupService {
 
         await this.whatsappService.sendTemplateMessage(
           student.phone,
-          "student_added_to_group",
+          "welcome_message",
           {
             name: student.name?.ar || student.name?.en || "",
-            groupName,
+            groupLine: ` في مجموعة "${groupName}"`,
             teacherLine,
-            teacherName,
+            data: "يسعدنا انضمامك معنا.",
           },
           {
             recipientName: student.name?.ar || student.name?.en || "",
@@ -363,21 +363,27 @@ class TeacherGroupService {
             teacherGroup.groupName?.ar ||
             teacherGroup.groupName?.en ||
             "التعليمية";
-          const templateName =
-            status === 'completed'
-              ? "student_group_completed"
-              : status === 'active'
-                ? "student_group_active"
-                : null;
-
-          if (templateName) {
+          if (status === 'active') {
             await this.whatsappService.sendTemplateMessage(
               studentMember.phone,
-              templateName,
+              "welcome_message",
               {
                 name: studentMember.name?.ar || studentMember.name?.en || "",
-                groupName,
+                groupLine: ` في مجموعة "${groupName}"`,
+                teacherLine: "",
+                data: "تم تفعيل حالتك وننتظر رؤيتك في الحصص القادمة.",
               },
+              {
+                recipientName:
+                  studentMember.name?.ar || studentMember.name?.en || "",
+                lang: "ar",
+              }
+            );
+          } else if (status === 'completed') {
+            const completionMessage = `تهانينا ${studentMember.name?.ar || studentMember.name?.en || ""}! لقد أتممت دراستك في مجموعة "${groupName}". نتمنى لك دوام التوفيق والنجاح!`;
+            await this.whatsappService.sendMessage(
+              studentMember.phone,
+              completionMessage,
               {
                 recipientName:
                   studentMember.name?.ar || studentMember.name?.en || "",

@@ -403,24 +403,9 @@ export class FormService {
 
       for (const number of numbers) {
         try {
-          const result = await this.whatsappService.sendTemplateMessage(
+          const result = await this.whatsappService.sendMessage(
             number,
-            "new_form_submission",
-            {
-              formTitle,
-              nameLine,
-              emailLine,
-              phoneLine,
-              data: message
-                .replace(/^.*?\*Form:\* .*?\n\n/s, "")
-                .replace(/^\*Submitter Details:\*\n?/m, "")
-                .replace(/^\*Form Data:\*\n?/m, "")
-                .replace(/\*/g, "")
-                .replace(/^Name:.*\n?/gm, "")
-                .replace(/^Email:.*\n?/gm, "")
-                .replace(/^Phone:.*\n?/gm, "")
-                .trim(),
-            },
+            message,
             {
               lang: "ar",
             }
