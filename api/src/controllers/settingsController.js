@@ -4,6 +4,7 @@ import { ApiError } from "../utils/apiError.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import { EmailService } from "../services/emailService.js";
 import whatsappService from "../services/whatsappNotificationService.js";
+import whatsappTemplateService from "../services/whatsappTemplateService.js";
 
 const settingsService = new SettingsService();
 const emailService = new EmailService();
@@ -228,6 +229,47 @@ export const saveTemplate = async (req, res, next) => {
   try {
     const template = await emailTemplateService.saveTemplate(req.body);
     return ApiResponse.success(res, template, "Email template saved successfully");
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getAllWhatsAppTemplates = async (req, res, next) => {
+  try {
+    const templates = await whatsappTemplateService.getAllTemplates();
+    return ApiResponse.success(
+      res,
+      templates,
+      "WhatsApp templates retrieved successfully"
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getWhatsAppTemplateByName = async (req, res, next) => {
+  try {
+    const template = await whatsappTemplateService.getTemplateByName(
+      req.params.name
+    );
+    return ApiResponse.success(
+      res,
+      template,
+      "WhatsApp template retrieved successfully"
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const saveWhatsAppTemplate = async (req, res, next) => {
+  try {
+    const template = await whatsappTemplateService.saveTemplate(req.body);
+    return ApiResponse.success(
+      res,
+      template,
+      "WhatsApp template saved successfully"
+    );
   } catch (error) {
     next(error);
   }

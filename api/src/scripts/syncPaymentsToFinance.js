@@ -23,6 +23,18 @@ import Finance from "../models/financeModel.js";
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
+function getPaymentFinanceSource(payment) {
+  const methodType = payment?.paymentDetails?.methodType;
+  const isManualPayment = Boolean(
+    payment?.manualPaymentMethodId ||
+      payment?.paymentProofUrl ||
+      methodType === "manual_user_payment" ||
+      methodType === "admin_manual_payment"
+  );
+
+  return isManualPayment ? "payment_manual" : "payment_auto";
+}
+
 async function syncPaymentsToFinance() {
   try {
     console.log("🔄 Connecting to database...");
@@ -45,7 +57,7 @@ async function syncPaymentsToFinance() {
         // Check if finance entry already exists
         const existingEntry = await Finance.findOne({
           "reference.id": payment._id,
-          source: "payment_auto",
+          source: { $in: ["payment_auto", "payment_manual"] },
           isDeleted: { $ne: true },
         });
 
@@ -64,6 +76,7 @@ async function syncPaymentsToFinance() {
         const exchangeRate = Finance.getExchangeRate(currency);
         const amountInUSD = Finance.convertToUSD(amount, currency);
 
+        const financeSource = getPaymentFinanceSource(payment);
         const financeEntry = new Finance({
           type: "income",
           amount: amount,
@@ -71,7 +84,7 @@ async function syncPaymentsToFinance() {
           category: "product_sale",
           description: description,
           transactionDate: payment.processedAt || payment.createdAt,
-          source: "payment_auto",
+          source: financeSource,
           reference: {
             id: payment._id,
             model: "Payment",

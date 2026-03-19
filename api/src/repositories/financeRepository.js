@@ -228,7 +228,7 @@ export class FinanceRepository extends BaseRepository {
   async hasPaymentEntry(paymentId) {
     const count = await this.model.countDocuments({
       "reference.id": paymentId,
-      source: "payment_auto",
+      source: { $in: ["payment_auto", "payment_manual"] },
       isDeleted: { $ne: true },
     });
     return count > 0;

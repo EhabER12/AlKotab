@@ -11,6 +11,9 @@ import {
   getAllTemplates,
   getTemplateByName,
   saveTemplate,
+  getAllWhatsAppTemplates,
+  getWhatsAppTemplateByName,
+  saveWhatsAppTemplate,
 } from "../controllers/settingsController.js";
 import { protect, authorize } from "../middlewares/authMiddleware.js";
 import {
@@ -61,6 +64,7 @@ router.put(
       'authorityBar', 'reviewsSettings', 'whyGenounSettings',
       'headerDisplay', 'marketingBanners', 'notifications', 'paymentGateways',
       'financeSettings', 'apiKeys', 'teacherProfitSettings',
+      'whatsappSettings', 'whatsappTemplates',
       'subscriptionStudentProfitSettings', 'heroStats'
     ];
 
@@ -133,6 +137,27 @@ router.post(
   protect,
   authorize("admin"),
   saveTemplate
+);
+
+router.get(
+  "/whatsapp/templates",
+  protect,
+  authorize("admin"),
+  getAllWhatsAppTemplates
+);
+
+router.get(
+  "/whatsapp/templates/:name",
+  protect,
+  authorize("admin"),
+  getWhatsAppTemplateByName
+);
+
+router.post(
+  "/whatsapp/templates",
+  protect,
+  authorize("admin"),
+  saveWhatsAppTemplate
 );
 
 export default router;

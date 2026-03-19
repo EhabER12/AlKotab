@@ -12,7 +12,7 @@ export interface FinanceTransaction {
   category: string;
   description?: string;
   transactionDate: string;
-  source: "manual" | "payment_auto" | "refund_auto" | "system";
+  source: "manual" | "payment_manual" | "payment_auto" | "refund_auto" | "system";
   reference?: {
     id?:
       | string
@@ -23,6 +23,8 @@ export interface FinanceTransaction {
           amount?: number;
           currency?: string;
           paymentMethod?: string;
+          manualPaymentMethodId?: string;
+          paymentProofUrl?: string;
           status?: string;
           couponCode?: string;
           couponDetails?: Record<string, any>;

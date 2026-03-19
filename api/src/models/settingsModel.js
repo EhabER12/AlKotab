@@ -522,6 +522,91 @@ const emailSettingsSchema = new mongoose.Schema({
   },
 });
 
+const whatsappTemplateVariableSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    description: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+  },
+  { _id: false }
+);
+
+const whatsappTemplateSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    label: {
+      type: localizedTextSchema,
+      default: () => ({ ar: "", en: "" }),
+    },
+    type: {
+      type: String,
+      default: "custom",
+      trim: true,
+    },
+    content: {
+      type: localizedTextSchema,
+      default: () => ({ ar: "", en: "" }),
+    },
+    variables: {
+      type: [whatsappTemplateVariableSchema],
+      default: () => [],
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    order: {
+      type: Number,
+      default: 0,
+    },
+  },
+  { _id: true }
+);
+
+const whatsappSettingsSchema = new mongoose.Schema(
+  {
+    messageDelayMs: {
+      type: Number,
+      default: 3000,
+      min: 0,
+      max: 600000,
+    },
+    messageDelayJitterMs: {
+      type: Number,
+      default: 1000,
+      min: 0,
+      max: 600000,
+    },
+    messageWrapperEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    messageWrapper: {
+      type: localizedTextSchema,
+      default: () => ({
+        ar: "{data}",
+        en: "{data}",
+      }),
+    },
+    lastUpdated: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  { _id: false }
+);
+
 const authSettingsSchema = new mongoose.Schema(
   {
     requireEmailVerification: {
@@ -913,6 +998,14 @@ const settingsSchema = new mongoose.Schema(
     },
     whatsappLastConnectedAt: {
       type: Date,
+    },
+    whatsappSettings: {
+      type: whatsappSettingsSchema,
+      default: () => ({}),
+    },
+    whatsappTemplates: {
+      type: [whatsappTemplateSchema],
+      default: () => [],
     },
     headerDisplay: {
       type: headerDisplaySchema,

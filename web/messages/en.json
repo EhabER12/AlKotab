@@ -1122,6 +1122,33 @@
         "saveSuccess": "Template saved successfully"
       }
     },
+    "whatsappTemplates": {
+      "title": "WhatsApp Templates",
+      "listTitle": "WhatsApp Message Templates",
+      "listDescription": "Manage the automatic WhatsApp messages sent by the system.",
+      "table": {
+        "template": "Template",
+        "type": "Type",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "edit": {
+        "title": "Edit WhatsApp Template",
+        "description": "Update the WhatsApp message body and use the available variables.",
+        "key": "Template Key",
+        "type": "Template Type",
+        "labelAr": "Label (Arabic)",
+        "labelEn": "Label (English)",
+        "contentAr": "Message Body (Arabic)",
+        "contentEn": "Message Body (English)",
+        "variables": "Available Variables",
+        "variablesHint": "You can use {name}, {data}, or any variable shown here. The system also supports {{name}} syntax for compatibility."
+      },
+      "messages": {
+        "noTemplates": "No WhatsApp templates found.",
+        "saveSuccess": "WhatsApp template saved successfully"
+      }
+    },
     "submissions": {
       "title": "Form Submissions",
       "description": "View and manage all form submissions",

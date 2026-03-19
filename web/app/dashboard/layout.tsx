@@ -37,6 +37,7 @@ import {
   UserCheck,
   AlertCircle,
   Mail,
+  MessageCircle,
   Home,
   TicketPercent,
 } from "lucide-react";
@@ -333,6 +334,13 @@ const menuItems: MenuItem[] = [
     title: "Email Templates",
     icon: <Mail className="h-4 w-4" />,
     href: "/dashboard/email-templates",
+    roles: ["admin"],
+  },
+  {
+    titleKey: "admin.whatsappTemplates.title",
+    title: "WhatsApp Templates",
+    icon: <MessageCircle className="h-4 w-4" />,
+    href: "/dashboard/whatsapp-templates",
     roles: ["admin"],
   },
   {

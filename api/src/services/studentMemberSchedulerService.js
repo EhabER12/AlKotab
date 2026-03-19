@@ -60,10 +60,8 @@ export class StudentMemberSchedulerService {
       logger.info(`Found ${members.length} members due for reminder`);
 
       // 3. Send WhatsApp reminders
-      const messageTemplate = this.getDefaultMessageTemplate();
       const results = await this.studentMemberService.sendBulkReminders({
         remindBeforeDays,
-        messageTemplate,
         scope: "due_soon",
       });
 

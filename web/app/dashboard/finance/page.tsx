@@ -101,6 +101,9 @@ export default function FinanceDashboardPage() {
   // Sorting
   type SortField = "transactionDate" | "amount" | "type" | "category";
   type SortOrder = "asc" | "desc";
+  type DisplayTransactionSource =
+    | FinanceTransaction["source"]
+    | "payment_manual";
   const [sortField, setSortField] = useState<SortField>("transactionDate");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   type AdminProfitTransaction = {
@@ -613,7 +616,34 @@ export default function FinanceDashboardPage() {
     return referenceId;
   };
 
-  const getSourceLabel = (source: FinanceTransaction["source"]) => {
+  const isManualPaymentReference = (payment: any) => {
+    const methodType = payment?.paymentDetails?.methodType;
+
+    return Boolean(
+      payment?.manualPaymentMethodId ||
+        payment?.paymentProofUrl ||
+        methodType === "manual_user_payment" ||
+        methodType === "admin_manual_payment"
+    );
+  };
+
+  const getTransactionSource = (
+    tx: FinanceTransaction
+  ): DisplayTransactionSource => {
+    if (tx.source === "payment_manual") {
+      return "payment_manual";
+    }
+
+    if (tx.source !== "payment_auto") {
+      return tx.source;
+    }
+
+    return isManualPaymentReference(getReferencedPayment(tx))
+      ? "payment_manual"
+      : "payment_auto";
+  };
+
+  const getSourceLabel = (source: DisplayTransactionSource) => {
     switch (source) {
       case "payment_auto":
         return isRtl ? "تلقائي (شراء)" : "Auto (Purchase)";
@@ -623,6 +653,21 @@ export default function FinanceDashboardPage() {
         return isRtl ? "نظام" : "System";
       default:
         return isRtl ? "يدوي" : "Manual";
+    }
+  };
+
+  const getDisplaySourceLabel = (source: DisplayTransactionSource) => {
+    switch (source) {
+      case "payment_manual":
+        return isRtl ? "يدوي (دفع)" : "Manual (Payment)";
+      case "payment_auto":
+        return isRtl ? "تلقائي (دفع)" : "Auto (Payment)";
+      case "refund_auto":
+        return isRtl ? "تلقائي (استرداد)" : "Auto (Refund)";
+      case "system":
+        return isRtl ? "نظام" : "System";
+      default:
+        return isRtl ? "يدوي (قيد)" : "Manual (Entry)";
     }
   };
 
@@ -641,6 +686,10 @@ export default function FinanceDashboardPage() {
   const getTransactionPurchaseType = (tx: FinanceTransaction) => {
     const payment = getReferencedPayment(tx);
     const purchaseType = tx.metadata?.purchaseType;
+
+    if (!payment && !purchaseType) {
+      return "-";
+    }
 
     if (purchaseType === "subscription" || payment?.packageId || payment?.studentMemberId) {
       return isRtl ? "اشتراك" : "Subscription";
@@ -800,7 +849,9 @@ export default function FinanceDashboardPage() {
 
     // Filter by source
     if (sourceFilter && sourceFilter !== "all") {
-      filtered = filtered.filter((tx) => tx.source === sourceFilter);
+      filtered = filtered.filter(
+        (tx) => getTransactionSource(tx) === sourceFilter
+      );
     }
 
     // Filter by amount range
@@ -1707,6 +1758,9 @@ export default function FinanceDashboardPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{isRtl ? "الكل" : "All"}</SelectItem>
+                  <SelectItem value="payment_manual">
+                    {isRtl ? "يدوي (دفع)" : "Manual (Payment)"}
+                  </SelectItem>
                   <SelectItem value="manual">
                     {isRtl ? "يدوي" : "Manual"}
                   </SelectItem>
@@ -1943,13 +1997,13 @@ export default function FinanceDashboardPage() {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-xs">
-                          {tx.source === "payment_auto"
+                          {false ? tx.source === "payment_auto"
                             ? isRtl
                               ? "تلقائي"
                               : "Auto"
                             : isRtl
                               ? "يدوي"
-                              : "Manual"}
+                              : "Manual" : getDisplaySourceLabel(getTransactionSource(tx))}
                         </Badge>
                       </TableCell>
                       </TableRow>
@@ -2039,7 +2093,9 @@ export default function FinanceDashboardPage() {
                       <span className="text-muted-foreground">
                         {isRtl ? "المصدر" : "Source"}
                       </span>
-                      <span>{getSourceLabel(selectedTransaction.source)}</span>
+                      <span>
+                        {getDisplaySourceLabel(getTransactionSource(selectedTransaction))}
+                      </span>
                     </div>
                     <div className="flex justify-between gap-3">
                       <span className="text-muted-foreground">

@@ -23,6 +23,7 @@ import progressReducer from "./slices/progressSlice";
 import packageReducer from "./slices/packageSlice";
 import teacherGroupReducer from "./slices/teacherGroupSlice";
 import emailTemplateReducer from "./slices/emailTemplateSlice";
+import whatsappTemplateReducer from "./slices/whatsappTemplateSlice";
 import notificationReducer from "./slices/notificationSlice";
 import teacherProfitReducer from "./slices/teacherProfitSlice";
 
@@ -51,6 +52,7 @@ export const store = configureStore({
     packages: packageReducer,
     teacherGroups: teacherGroupReducer,
     emailTemplates: emailTemplateReducer,
+    whatsappTemplates: whatsappTemplateReducer,
     notifications: notificationReducer,
     teacherProfit: teacherProfitReducer,
   },

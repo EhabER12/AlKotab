@@ -14,6 +14,46 @@ import TeacherGroup from "../models/teacherGroupModel.js";
 import Settings from "../models/settingsModel.js";
 import teacherGroupService from "./teacherGroupService.js";
 import { parse } from 'csv-parse/sync';
+import whatsappTemplateService from "./whatsappTemplateService.js";
+
+const buildReminderTemplateVariables = (
+  member,
+  getTeacherName,
+  getLocalizedValue
+) => {
+  const dueDate = new Date(member.nextDueDate).toLocaleDateString("ar-EG");
+  const rawDaysLeft = differenceInDays(
+    startOfDay(new Date(member.nextDueDate)),
+    startOfDay(new Date())
+  );
+  const teacherName = getTeacherName(member);
+  const packageName = getLocalizedValue(member.packageId?.name);
+  const statusLabel =
+    rawDaysLeft < 0 ? "متأخر" : rawDaysLeft === 0 ? "اليوم" : "قريب";
+  const daysSummary =
+    rawDaysLeft < 0
+      ? `الاشتراك متأخر منذ ${Math.abs(rawDaysLeft)} يوم`
+      : rawDaysLeft === 0
+        ? "موعد التجديد اليوم"
+        : `متبقي ${rawDaysLeft} يوم على موعد التجديد`;
+  const teacherLine = teacherName ? `المعلم/المعلمة: ${teacherName}` : "";
+  const packageLine = packageName ? `الباقة: ${packageName}` : "";
+  const memberName = getLocalizedValue(member.name);
+
+  return {
+    name: memberName,
+    dueDate,
+    daysLeft: String(Math.max(rawDaysLeft, 0)),
+    daysOverdue: String(rawDaysLeft < 0 ? Math.abs(rawDaysLeft) : 0),
+    daysSummary,
+    statusLabel,
+    teacherLine,
+    teacherName,
+    packageLine,
+    packageName,
+    phone: member.phone || "",
+  };
+};
 
 export class StudentMemberService {
   constructor() {
@@ -663,12 +703,41 @@ export class StudentMemberService {
       throw new ApiError(400, "Member has no phone number");
     }
 
-    // Build message from template
-    const message = this.buildEnhancedReminderMessage(member, messageTemplate);
-
     // Send WhatsApp message
     try {
-      await this.whatsappService.sendMessage(member.phone, message);
+      const reminderVariables = buildReminderTemplateVariables(
+        member,
+        (currentMember) => this.getTeacherName(currentMember),
+        (value) => this.getLocalizedValue(value)
+      );
+      const memberName = this.getLocalizedValue(member.name);
+      const result = messageTemplate
+        ? await this.whatsappService.sendMessage(
+            member.phone,
+            this.buildEnhancedReminderMessage(member, messageTemplate),
+            {
+              recipientName: memberName,
+              lang: "ar",
+            }
+          )
+        : await this.whatsappService.sendTemplateMessage(
+            member.phone,
+            "subscription_reminder",
+            reminderVariables,
+            {
+              recipientName: memberName,
+              lang: "ar",
+            }
+          );
+
+      if (result?.skipped) {
+        return {
+          success: false,
+          skipped: true,
+          message: "Reminder template is inactive",
+          phone: member.phone,
+        };
+      }
 
       // Update reminder tracking
       member.lastReminderSent = new Date();
@@ -716,7 +785,9 @@ export class StudentMemberService {
           memberId: member.id,
           name: member.name,
           phone: member.phone,
-          success: true,
+          success: result?.success !== false,
+          skipped: result?.skipped || false,
+          message: result?.message,
         });
       } catch (error) {
         results.push({

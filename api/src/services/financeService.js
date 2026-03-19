@@ -15,7 +15,7 @@ export class FinanceService {
       {
         path: "reference.id",
         select:
-          "merchantOrderId amount currency paymentMethod billingInfo paymentDetails productId courseId serviceId packageId studentMemberId cartSessionId couponCode couponDetails status createdAt processedAt",
+          "merchantOrderId amount currency paymentMethod manualPaymentMethodId paymentProofUrl billingInfo paymentDetails productId courseId serviceId packageId studentMemberId cartSessionId couponCode couponDetails status createdAt processedAt",
         populate: [
           { path: "productId", select: "_id name slug coverImage basePrice" },
           {
@@ -39,6 +39,22 @@ export class FinanceService {
         ],
       },
     ];
+  }
+
+  isManualPayment(payment) {
+    if (!payment) return false;
+
+    const methodType = payment.paymentDetails?.methodType;
+    return Boolean(
+      payment.manualPaymentMethodId ||
+        payment.paymentProofUrl ||
+        methodType === "manual_user_payment" ||
+        methodType === "admin_manual_payment"
+    );
+  }
+
+  getPaymentSource(payment) {
+    return this.isManualPayment(payment) ? "payment_manual" : "payment_auto";
   }
 
   /**
@@ -126,7 +142,7 @@ export class FinanceService {
       category,
       description,
       transactionDate: payment.processedAt || payment.createdAt || new Date(),
-      source: "payment_auto",
+      source: this.getPaymentSource(payment),
       reference: {
         id: payment._id,
         model: "Payment",
@@ -279,10 +295,7 @@ export class FinanceService {
     const transaction = await this.getTransactionById(id);
 
     // Prevent editing auto-generated entries
-    if (
-      transaction.source !== "manual" &&
-      transaction.source !== "adjustment"
-    ) {
+    if (transaction.source !== "manual") {
       throw new ApiError(
         400,
         "Cannot edit auto-generated transactions. Create an adjustment instead."
@@ -343,7 +356,7 @@ export class FinanceService {
     const transaction = await this.getTransactionById(id);
 
     // For auto-generated, suggest creating reverse entry instead
-    if (transaction.source === "payment_auto") {
+    if (transaction.source !== "manual") {
       throw new ApiError(
         400,
         "Cannot delete payment entries. Create a refund or adjustment instead."

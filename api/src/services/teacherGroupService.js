@@ -275,6 +275,29 @@ class TeacherGroupService {
       }
 
       if (student && student.phone && this.whatsappService.isConfigured()) {
+        const groupName =
+          teacherGroup.groupName?.ar ||
+          teacherGroup.groupName?.en ||
+          "تعليمية";
+        const teacherLine = teacherName ? `مع المعلم ${teacherName}` : "";
+
+        await this.whatsappService.sendTemplateMessage(
+          student.phone,
+          "student_added_to_group",
+          {
+            name: student.name?.ar || student.name?.en || "",
+            groupName,
+            teacherLine,
+            teacherName,
+          },
+          {
+            recipientName: student.name?.ar || student.name?.en || "",
+            lang: "ar",
+          }
+        );
+      }
+
+      if (false && student && student.phone && this.whatsappService.isConfigured()) {
         const teacherLabel = teacherName ? `مع المعلم ${teacherName}` : "مع المعلم";
         const message = `مرحباً ${student.name.ar}، لقد تمت إضافتك إلى مجموعة "${teacherGroup.groupName?.ar || teacherGroup.groupName?.en || 'تعليمية'}" ${teacherLabel}. بالتوفيق! 🌟`;
         await this.whatsappService.sendMessage(student.phone, message);
@@ -336,6 +359,35 @@ class TeacherGroupService {
       try {
         const studentMember = await StudentMember.findById(studentId);
         if (studentMember && studentMember.phone && this.whatsappService.isConfigured()) {
+          const groupName =
+            teacherGroup.groupName?.ar ||
+            teacherGroup.groupName?.en ||
+            "التعليمية";
+          const templateName =
+            status === 'completed'
+              ? "student_group_completed"
+              : status === 'active'
+                ? "student_group_active"
+                : null;
+
+          if (templateName) {
+            await this.whatsappService.sendTemplateMessage(
+              studentMember.phone,
+              templateName,
+              {
+                name: studentMember.name?.ar || studentMember.name?.en || "",
+                groupName,
+              },
+              {
+                recipientName:
+                  studentMember.name?.ar || studentMember.name?.en || "",
+                lang: "ar",
+              }
+            );
+          }
+        }
+
+        if (false && studentMember && studentMember.phone && this.whatsappService.isConfigured()) {
           let message = "";
           if (status === 'completed') {
             message = `تهانينا ${studentMember.name.ar}! لقد أتممت دراستك في مجموعة "${teacherGroup.groupName?.ar || teacherGroup.groupName?.en || 'التعليمية'}". نتمنى لك دوام التوفيق والنجاح! 🎓✨`;

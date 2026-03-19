@@ -138,6 +138,8 @@ export class SettingsService {
       "whyGenounSettings",
       "financeSettings",
       "apiKeys",
+      "whatsappSettings",
+      "whatsappTemplates",
       "subscriptionTeachers",
       "subscriptionStudentProfitSettings",
       "heroStats",
@@ -168,6 +170,13 @@ export class SettingsService {
           }
           return banner;
         });
+    }
+
+    if (settingsData.whatsappSettings) {
+      settingsData.whatsappSettings = {
+        ...settingsData.whatsappSettings,
+        lastUpdated: new Date(),
+      };
     }
 
     // Get current settings

@@ -5,11 +5,13 @@ import slugify from "../utils/slugify.js";
 import { SettingsRepository } from "../repositories/settingsRepository.js";
 import emailTemplateService from "./emailTemplateService.js";
 import logger from "../utils/logger.js";
+import { WhatsappNotificationService } from "./whatsappNotificationService.js";
 
 export class FormService {
   constructor() {
     this.formRepository = new FormRepository();
     this.settingsRepository = new SettingsRepository();
+    this.whatsappService = new WhatsappNotificationService();
   }
 
   escapeHtml(value) {
@@ -395,8 +397,49 @@ export class FormService {
 
       // Track notification results
       const results = [];
+      const nameLine = name ? `الاسم: ${name}\n` : "";
+      const emailLine = email ? `البريد الإلكتروني: ${email}\n` : "";
+      const phoneLine = phone ? `الهاتف: ${phone}\n` : "";
 
-      return { success: results.some((r) => r.success), results };
+      for (const number of numbers) {
+        try {
+          const result = await this.whatsappService.sendTemplateMessage(
+            number,
+            "new_form_submission",
+            {
+              formTitle,
+              nameLine,
+              emailLine,
+              phoneLine,
+              data: message
+                .replace(/^.*?\*Form:\* .*?\n\n/s, "")
+                .replace(/^\*Submitter Details:\*\n?/m, "")
+                .replace(/^\*Form Data:\*\n?/m, "")
+                .replace(/\*/g, "")
+                .replace(/^Name:.*\n?/gm, "")
+                .replace(/^Email:.*\n?/gm, "")
+                .replace(/^Phone:.*\n?/gm, "")
+                .trim(),
+            },
+            {
+              lang: "ar",
+            }
+          );
+
+          results.push({ number, ...result });
+        } catch (sendError) {
+          results.push({
+            number,
+            success: false,
+            error: sendError.message,
+          });
+        }
+      }
+
+      return {
+        success: results.some((result) => result.success),
+        results,
+      };
     } catch (error) {
       // Don't throw error to avoid affecting the form submission flow
       return { success: false, error: error.message };

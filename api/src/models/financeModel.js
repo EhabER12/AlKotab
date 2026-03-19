@@ -100,7 +100,7 @@ const financeSchema = new mongoose.Schema(
     // Source of the transaction
     source: {
       type: String,
-      enum: ["manual", "payment_auto", "refund_auto", "system"],
+      enum: ["manual", "payment_manual", "payment_auto", "refund_auto", "system"],
       default: "manual",
     },
 

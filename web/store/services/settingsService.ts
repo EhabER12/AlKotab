@@ -386,6 +386,14 @@ export interface HeroStatsSettings {
   satisfiedStudents: HeroStatItem;
 }
 
+export interface WhatsAppDeliverySettings {
+  messageDelayMs: number;
+  messageDelayJitterMs: number;
+  messageWrapperEnabled: boolean;
+  messageWrapper: { ar: string; en: string };
+  lastUpdated?: Date | string;
+}
+
 
 export interface WebsiteSettingsData {
   whatsappConnected: boolean;
@@ -402,6 +410,7 @@ export interface WebsiteSettingsData {
   whatsappDisplayName?: string;
   whatsappLastError?: string;
   whatsappLastConnectedAt?: string;
+  whatsappSettings?: WhatsAppDeliverySettings;
   qrCode?: string;
   _id: string;
   siteName: string;

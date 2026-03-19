@@ -5,9 +5,12 @@ import { fileURLToPath } from "url";
 import Settings from "../models/settingsModel.js";
 import { ApiError } from "../utils/apiError.js";
 import logger from "../utils/logger.js";
+import whatsappTemplateService from "./whatsappTemplateService.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+let sharedSendQueue = Promise.resolve();
+let sharedLastMessageTimestamp = 0;
 
 class WhatsAppWebManager {
   constructor() {
@@ -625,12 +628,112 @@ export class WhatsappNotificationService {
     return this.manager.getStatus();
   }
 
-  async sendTextMessage(number, text) {
-    return this.manager.sendTextMessage(number, text);
+  enqueueSend(task) {
+    const queuedTask = sharedSendQueue.then(task, task);
+    sharedSendQueue = queuedTask.catch(() => undefined);
+    return queuedTask;
   }
 
-  async sendMessage(number, text) {
-    return this.sendTextMessage(number, text);
+  async waitForConfiguredDelay() {
+    const deliverySettings = await whatsappTemplateService.getDeliverySettings();
+    const baseDelay = Math.max(0, Number(deliverySettings.messageDelayMs) || 0);
+    const jitter = Math.max(
+      0,
+      Number(deliverySettings.messageDelayJitterMs) || 0
+    );
+    const delayMs =
+      baseDelay + (jitter > 0 ? Math.floor(Math.random() * (jitter + 1)) : 0);
+
+    if (sharedLastMessageTimestamp > 0) {
+      const elapsedMs = Date.now() - sharedLastMessageTimestamp;
+      if (elapsedMs < delayMs) {
+        await this.delay(delayMs - elapsedMs);
+      }
+    }
+
+    return deliverySettings;
+  }
+
+  applyMessageWrapper(text, deliverySettings, options = {}) {
+    const rawText = String(text || "").trim();
+
+    if (!rawText) {
+      return rawText;
+    }
+
+    if (!deliverySettings?.messageWrapperEnabled || options.skipWrapper) {
+      return rawText;
+    }
+
+    const lang = options.lang === "en" ? "en" : "ar";
+    const wrapperTemplate =
+      deliverySettings.messageWrapper?.[lang] ||
+      deliverySettings.messageWrapper?.en ||
+      deliverySettings.messageWrapper?.ar ||
+      "{data}";
+    const wrappedText = whatsappTemplateService.renderText(wrapperTemplate, {
+      data: rawText,
+      name: options.recipientName || "",
+      phone: options.phone || "",
+    });
+
+    return wrappedText || rawText;
+  }
+
+  async sendTextMessage(number, text, options = {}) {
+    const rawText = String(text || "").trim();
+
+    if (!rawText) {
+      throw new ApiError(400, "Message text is required");
+    }
+
+    return this.enqueueSend(async () => {
+      const deliverySettings = await this.waitForConfiguredDelay();
+      const finalText = this.applyMessageWrapper(rawText, deliverySettings, {
+        ...options,
+        phone: number,
+      });
+      const result = await this.manager.sendTextMessage(number, finalText);
+      sharedLastMessageTimestamp = Date.now();
+      return result;
+    });
+  }
+
+  async sendMessage(number, text, options = {}) {
+    return this.sendTextMessage(number, text, options);
+  }
+
+  async sendTemplateMessage(
+    number,
+    templateName,
+    variables = {},
+    options = {}
+  ) {
+    const lang = options.lang === "en" ? "en" : "ar";
+    const renderedMessage = await whatsappTemplateService.renderTemplateMessage(
+      templateName,
+      variables,
+      lang
+    );
+
+    if (renderedMessage === null) {
+      logger.info("Skipped inactive WhatsApp template", {
+        templateName,
+        number,
+      });
+      return {
+        success: false,
+        skipped: true,
+        reason: "template_inactive",
+      };
+    }
+
+    return this.sendTextMessage(number, renderedMessage, {
+      ...options,
+      lang,
+      recipientName:
+        options.recipientName || variables.name || variables.recipientName || "",
+    });
   }
 
   async sendMediaMessage(number, mediaUrl, caption = "") {
@@ -656,7 +759,6 @@ export class WhatsappNotificationService {
       try {
         const result = await this.sendTextMessage(number, message);
         results.push({ number, ...result });
-        await this.delay(500);
       } catch (error) {
         results.push({
           number,
