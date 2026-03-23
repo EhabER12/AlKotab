@@ -236,6 +236,14 @@ export class AuthService {
       };
     }
 
+    if (user.role === "moderator") {
+      responseData.employeeInfo = {
+        dashboardAccess: Array.isArray(user.employeeInfo?.dashboardAccess)
+          ? user.employeeInfo.dashboardAccess
+          : undefined,
+      };
+    }
+
     return responseData;
   }
 
@@ -246,7 +254,7 @@ export class AuthService {
       throw new ApiError(404, "User not found");
     }
 
-    return {
+    const profileData = {
       _id: user._id,
       fullName: user.fullName,
       email: user.email,
@@ -254,6 +262,16 @@ export class AuthService {
       status: user.status,
       isEmailVerified: user.isEmailVerified,
     };
+
+    if (user.role === "moderator") {
+      profileData.employeeInfo = {
+        dashboardAccess: Array.isArray(user.employeeInfo?.dashboardAccess)
+          ? user.employeeInfo.dashboardAccess
+          : undefined,
+      };
+    }
+
+    return profileData;
   }
 
   /**

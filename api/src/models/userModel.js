@@ -149,6 +149,7 @@ const userSchema = new mongoose.Schema(
       hireDate: { type: Date },
       department: { type: String },
       position: { type: String },
+      dashboardAccess: [{ type: String }],
     },
     // Activity Tracking
     activityInfo: {

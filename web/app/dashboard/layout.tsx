@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import axiosInstance from "@/lib/axios";
 import {
   Compass,
   FileText,
@@ -47,6 +48,11 @@ import {
   useAdminLocale,
 } from "@/hooks/dashboard/useAdminLocale";
 import { AdminLanguageSwitcher } from "@/components/dashboard/AdminLanguageSwitcher";
+import {
+  getModeratorFallbackPath,
+  getResolvedModeratorDashboardAccess,
+  moderatorCanAccessPath,
+} from "@/lib/dashboardAccess";
 
 interface MenuItem {
   titleKey: string;
@@ -369,7 +375,7 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
 
   useEffect(() => {
     // Check authentication on the client side
-    const checkAuth = () => {
+    const checkAuth = async () => {
       try {
         const userString = localStorage.getItem("user");
         if (!userString) {
@@ -391,6 +397,31 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
           return;
         }
 
+        if (userData.role === "moderator" && userData.token) {
+          try {
+            const response = await axiosInstance.get("/auth/me", {
+              headers: { "X-No-Loading": "true" },
+            });
+            const profile = response.data?.data;
+
+            if (profile) {
+              const refreshedUser = {
+                ...userData,
+                ...profile,
+                token: userData.token,
+                refreshToken: (userData as any).refreshToken,
+                expiresIn: (userData as any).expiresIn,
+              };
+
+              localStorage.setItem("user", JSON.stringify(refreshedUser));
+              setUser(refreshedUser);
+              return;
+            }
+          } catch (refreshError) {
+            console.error("Failed to refresh moderator profile:", refreshError);
+          }
+        }
+
         setUser(userData);
       } catch (error) {
         console.error("Auth check error:", error);
@@ -408,6 +439,16 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
     setSidebarOpen(false);
   }, [pathname]);
 
+  useEffect(() => {
+    if (!user || user.role !== "moderator") return;
+
+    if (!moderatorCanAccessPath(pathname, user.employeeInfo?.dashboardAccess)) {
+      router.replace(
+        getModeratorFallbackPath(user.employeeInfo?.dashboardAccess)
+      );
+    }
+  }, [pathname, router, user]);
+
   if (loading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
@@ -420,9 +461,38 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
     return null;
   }
 
-  const filteredMenuItems = menuItems.filter((item) =>
-    item.roles.includes(user.role || "")
-  );
+  const moderatorDashboardAccess =
+    user.role === "moderator"
+      ? getResolvedModeratorDashboardAccess(user.employeeInfo?.dashboardAccess)
+      : [];
+
+  const canAccessMenuHref = (href?: string) =>
+    !href ||
+    user.role !== "moderator" ||
+    moderatorDashboardAccess.includes(href);
+
+  const filteredMenuItems = menuItems
+    .filter((item) => item.roles.includes(user.role || ""))
+    .map((item) => {
+      if (!item.children) {
+        return item;
+      }
+
+      return {
+        ...item,
+        children: item.children.filter(
+          (child) =>
+            child.roles.includes(user.role || "") && canAccessMenuHref(child.href)
+        ),
+      };
+    })
+    .filter((item) => {
+      if (item.children) {
+        return item.children.length > 0;
+      }
+
+      return canAccessMenuHref(item.href);
+    });
 
   const getMenuTitle = (item: MenuItem) => {
     const translated = t(item.titleKey);

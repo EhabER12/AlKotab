@@ -36,6 +36,9 @@ export interface User {
     bio?: string;
     specialization?: string;
   };
+  employeeInfo?: {
+    dashboardAccess?: string[];
+  };
   studentInfo?: {
     age?: number;
     assignedTeacher?: string;

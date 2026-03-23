@@ -23,6 +23,7 @@ export interface EmployeeInfo {
   hireDate?: string;
   department?: string;
   position?: string;
+  dashboardAccess?: string[];
 }
 
 export interface ActivityInfo {

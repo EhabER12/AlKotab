@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -14,7 +15,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -47,6 +54,7 @@ import {
   Activity,
   FileText,
   ListTodo,
+  LayoutDashboard,
 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import {
@@ -68,6 +76,43 @@ import {
 import { useAdminLocale } from "@/hooks/dashboard/useAdminLocale";
 import { formatDistanceToNow, format } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
+import {
+  MODERATOR_DASHBOARD_ACCESS_GROUPS,
+  MODERATOR_DASHBOARD_ACCESS_OPTIONS,
+  getResolvedModeratorDashboardAccess,
+} from "@/lib/dashboardAccess";
+
+const dashboardAccessOptionMap = new Map(
+  MODERATOR_DASHBOARD_ACCESS_OPTIONS.map((item) => [item.href, item])
+);
+
+const buildEmployeeEditData = (employee: any) => ({
+  name: employee.name || "",
+  phone: employee.phone || "",
+  employeeInfo: {
+    position: employee.employeeInfo?.position || "",
+    department: employee.employeeInfo?.department || "",
+    salary: {
+      amount: employee.employeeInfo?.salary?.amount || 0,
+      currency: employee.employeeInfo?.salary?.currency || "EGP",
+      paymentSchedule:
+        employee.employeeInfo?.salary?.paymentSchedule || "monthly",
+    },
+    address: {
+      street: employee.employeeInfo?.address?.street || "",
+      city: employee.employeeInfo?.address?.city || "",
+      country: employee.employeeInfo?.address?.country || "",
+    },
+    emergencyContact: {
+      name: employee.employeeInfo?.emergencyContact?.name || "",
+      phone: employee.employeeInfo?.emergencyContact?.phone || "",
+      relationship: employee.employeeInfo?.emergencyContact?.relationship || "",
+    },
+    dashboardAccess: getResolvedModeratorDashboardAccess(
+      employee.employeeInfo?.dashboardAccess
+    ),
+  },
+});
 
 export default function EmployeeDetailPage({
   params,
@@ -124,33 +169,45 @@ function EmployeeDetailContent({ employeeId }: { employeeId: string }) {
 
   useEffect(() => {
     if (employee) {
-      setEditData({
-        name: employee.name || "",
-        phone: employee.phone || "",
-        employeeInfo: {
-          position: employee.employeeInfo?.position || "",
-          department: employee.employeeInfo?.department || "",
-          salary: {
-            amount: employee.employeeInfo?.salary?.amount || 0,
-            currency: employee.employeeInfo?.salary?.currency || "EGP",
-            paymentSchedule:
-              employee.employeeInfo?.salary?.paymentSchedule || "monthly",
-          },
-          address: {
-            street: employee.employeeInfo?.address?.street || "",
-            city: employee.employeeInfo?.address?.city || "",
-            country: employee.employeeInfo?.address?.country || "",
-          },
-          emergencyContact: {
-            name: employee.employeeInfo?.emergencyContact?.name || "",
-            phone: employee.employeeInfo?.emergencyContact?.phone || "",
-            relationship:
-              employee.employeeInfo?.emergencyContact?.relationship || "",
-          },
-        },
-      });
+      setEditData(buildEmployeeEditData(employee));
     }
   }, [employee]);
+
+  const selectedDashboardAccess = getResolvedModeratorDashboardAccess(
+    editData.employeeInfo?.dashboardAccess ?? employee?.employeeInfo?.dashboardAccess
+  );
+
+  const getDashboardAccessTitle = (href: string) => {
+    const option = dashboardAccessOptionMap.get(href);
+    if (!option) return href;
+
+    const translated = t(option.titleKey);
+    return translated !== option.titleKey ? translated : option.fallbackTitle;
+  };
+
+  const handleToggleDashboardAccess = (href: string, enabled: boolean) => {
+    setEditData((prev: any) => {
+      const currentAccess = getResolvedModeratorDashboardAccess(
+        prev.employeeInfo?.dashboardAccess ?? employee?.employeeInfo?.dashboardAccess
+      );
+
+      if (!enabled && currentAccess.length === 1 && currentAccess.includes(href)) {
+        return prev;
+      }
+
+      const nextAccess = enabled
+        ? [...new Set([...currentAccess, href])]
+        : currentAccess.filter((item) => item !== href);
+
+      return {
+        ...prev,
+        employeeInfo: {
+          ...prev.employeeInfo,
+          dashboardAccess: nextAccess,
+        },
+      };
+    });
+  };
 
   const handleSave = async () => {
     await dispatch(updateEmployee({ employeeId, data: editData }));
@@ -318,7 +375,15 @@ function EmployeeDetailContent({ employeeId }: { employeeId: string }) {
           </Button>
         ) : (
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setIsEditing(false)}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (employee) {
+                  setEditData(buildEmployeeEditData(employee));
+                }
+                setIsEditing(false);
+              }}
+            >
               <X className={`h-4 w-4 ${isRtl ? "ml-2" : "mr-2"}`} />
               {t("admin.common.cancel") || "Cancel"}
             </Button>
@@ -340,6 +405,10 @@ function EmployeeDetailContent({ employeeId }: { employeeId: string }) {
           <TabsTrigger value="overview" className="gap-2">
             <User className="h-4 w-4" />
             {t("admin.employees.overview") || "Overview"}
+          </TabsTrigger>
+          <TabsTrigger value="permissions" className="gap-2">
+            <LayoutDashboard className="h-4 w-4" />
+            {isRtl ? "صلاحيات الداشبورد" : "Dashboard Access"}
           </TabsTrigger>
           <TabsTrigger value="tasks" className="gap-2">
             <ListTodo className="h-4 w-4" />
@@ -756,6 +825,94 @@ function EmployeeDetailContent({ employeeId }: { employeeId: string }) {
               </Card>
             )}
           </div>
+        </TabsContent>
+
+        <TabsContent value="permissions">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <LayoutDashboard className="h-5 w-5" />
+                {isRtl ? "صفحات الداشبورد للمودريتور" : "Moderator Dashboard Pages"}
+              </CardTitle>
+              <CardDescription>
+                {isRtl
+                  ? "حدد الصفحات التي تظهر لهذا المودريتور في السايدبار ويُسمح له بفتحها داخل الداشبورد."
+                  : "Choose which dashboard pages appear for this moderator and can be opened from the dashboard."}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="rounded-lg border bg-muted/40 p-4">
+                <p className="text-sm font-medium">
+                  {isEditing
+                    ? isRtl
+                      ? "الصفحات المحددة حاليًا"
+                      : "Currently selected pages"
+                    : isRtl
+                    ? "الصفحات المفعلة حاليًا لهذا المودريتور"
+                    : "Currently enabled pages for this moderator"}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {selectedDashboardAccess.map((href) => (
+                    <Badge key={href} variant="secondary">
+                      {getDashboardAccessTitle(href)}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                {MODERATOR_DASHBOARD_ACCESS_GROUPS.map((group) => (
+                  <Card key={group.id} className="border-dashed">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base">
+                        {isRtl ? group.label.ar : group.label.en}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {group.items.map((item) => {
+                        const isChecked = selectedDashboardAccess.includes(item.href);
+                        const isLastSelected =
+                          isChecked && selectedDashboardAccess.length === 1;
+
+                        return (
+                          <label
+                            key={item.href}
+                            className={`flex items-start gap-3 rounded-lg border p-3 transition-colors ${
+                              isEditing ? "cursor-pointer hover:border-primary/40" : "opacity-80"
+                            }`}
+                          >
+                            <Checkbox
+                              checked={isChecked}
+                              disabled={!isEditing || isLastSelected}
+                              onCheckedChange={(checked) =>
+                                handleToggleDashboardAccess(item.href, checked === true)
+                              }
+                            />
+                            <div className="space-y-1">
+                              <p className="font-medium leading-none">
+                                {getDashboardAccessTitle(item.href)}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {item.href}
+                              </p>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {isEditing && (
+                <p className="text-xs text-muted-foreground">
+                  {isRtl
+                    ? "يجب ترك صفحة واحدة على الأقل مفعلة للمودريتور."
+                    : "Keep at least one dashboard page enabled for this moderator."}
+                </p>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Tasks Tab */}

@@ -249,13 +249,17 @@ export class EmployeeService {
 
     if (updateData.employeeInfo) {
       Object.keys(updateData.employeeInfo).forEach((key) => {
-        if (typeof updateData.employeeInfo[key] === "object") {
-          Object.keys(updateData.employeeInfo[key]).forEach((subKey) => {
+        const value = updateData.employeeInfo[key];
+
+        if (Array.isArray(value)) {
+          update[`employeeInfo.${key}`] = value;
+        } else if (value && typeof value === "object") {
+          Object.keys(value).forEach((subKey) => {
             update[`employeeInfo.${key}.${subKey}`] =
-              updateData.employeeInfo[key][subKey];
+              value[subKey];
           });
         } else {
-          update[`employeeInfo.${key}`] = updateData.employeeInfo[key];
+          update[`employeeInfo.${key}`] = value;
         }
       });
     }
