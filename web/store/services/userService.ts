@@ -34,6 +34,9 @@ interface UpdateUserPayload {
   email?: string;
   role?: string;
   status?: string;
+  employeeInfo?: {
+    dashboardAccess?: string[];
+  };
 }
 
 interface UpdateUserPasswordPayload {

@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -68,9 +69,18 @@ import { resetUserManagementStatus } from "@/store/slices/userSlice";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useAdminLocale } from "@/hooks/dashboard/useAdminLocale";
+import {
+  MODERATOR_DASHBOARD_ACCESS_GROUPS,
+  MODERATOR_DASHBOARD_ACCESS_OPTIONS,
+  getResolvedModeratorDashboardAccess,
+} from "@/lib/dashboardAccess";
 
 // Define roles - adjust based on your actual roles
 const ROLES = ["user", "teacher", "moderator", "admin"];
+
+const dashboardAccessOptionMap = new Map(
+  MODERATOR_DASHBOARD_ACCESS_OPTIONS.map((item) => [item.href, item])
+);
 
 export default function UsersDashboardPage() {
   return (
@@ -120,6 +130,9 @@ function UsersContent() {
     email: "",
     role: "user",
     status: "active",
+    employeeInfo: {
+      dashboardAccess: getResolvedModeratorDashboardAccess(),
+    },
   });
 
   const fetchUsers = useCallback(
@@ -200,8 +213,62 @@ function UsersContent() {
       email: user.email || "",
       role: user.role || "user",
       status: user.status || "active",
+      employeeInfo: {
+        dashboardAccess: getResolvedModeratorDashboardAccess(
+          user.employeeInfo?.dashboardAccess
+        ),
+      },
     });
     setIsEditDialogOpen(true);
+  };
+
+  const selectedDashboardAccess = getResolvedModeratorDashboardAccess(
+    editingUser.employeeInfo?.dashboardAccess
+  );
+
+  const getDashboardAccessTitle = (href: string) => {
+    const option = dashboardAccessOptionMap.get(href);
+    if (!option) return href;
+
+    const translated = t(option.titleKey);
+    return translated !== option.titleKey ? translated : option.fallbackTitle;
+  };
+
+  const handleEditRoleChange = (value: string) => {
+    setEditingUser((prev) => ({
+      ...prev,
+      role: value,
+      employeeInfo: {
+        ...prev.employeeInfo,
+        dashboardAccess: getResolvedModeratorDashboardAccess(
+          prev.employeeInfo?.dashboardAccess
+        ),
+      },
+    }));
+  };
+
+  const handleToggleDashboardAccess = (href: string, enabled: boolean) => {
+    setEditingUser((prev) => {
+      const currentAccess = getResolvedModeratorDashboardAccess(
+        prev.employeeInfo?.dashboardAccess
+      );
+
+      if (!enabled && currentAccess.length === 1 && currentAccess.includes(href)) {
+        return prev;
+      }
+
+      const nextAccess = enabled
+        ? [...new Set([...currentAccess, href])]
+        : currentAccess.filter((item) => item !== href);
+
+      return {
+        ...prev,
+        employeeInfo: {
+          ...prev.employeeInfo,
+          dashboardAccess: nextAccess,
+        },
+      };
+    });
   };
 
   const handleUpdateUser = async () => {
@@ -214,7 +281,22 @@ function UsersContent() {
     const originalUser = users.find((u) => (u.id || u._id) === editingUser.userId);
 
     // Update basic user info
-    await dispatch(updateUser(editingUser));
+    const updatePayload = {
+      userId: editingUser.userId,
+      name: editingUser.name,
+      email: editingUser.email,
+      role: editingUser.role,
+      status: editingUser.status,
+      ...(editingUser.role === "moderator"
+        ? {
+            employeeInfo: {
+              dashboardAccess: selectedDashboardAccess,
+            },
+          }
+        : {}),
+    };
+
+    await dispatch(updateUser(updatePayload));
 
     // If role changed, call the separate role update endpoint
     if (originalUser && originalUser.role !== editingUser.role) {
@@ -402,7 +484,10 @@ function UsersContent() {
 
         {/* Edit User Dialog - Using safeRender logic for initialization */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent
+            className="max-h-[85vh] overflow-y-auto sm:max-w-3xl"
+            dir={isRtl ? "rtl" : "ltr"}
+          >
             <DialogHeader>
               <DialogTitle className="text-start">
                 {t("admin.users.editUser")}
@@ -437,9 +522,7 @@ function UsersContent() {
                 <Label htmlFor="edit-role">{t("admin.users.role")}</Label>
                 <Select
                   value={editingUser.role}
-                  onValueChange={(value) =>
-                    setEditingUser({ ...editingUser, role: value })
-                  }
+                  onValueChange={handleEditRoleChange}
                   dir={isRtl ? "rtl" : "ltr"}
                 >
                   <SelectTrigger id="edit-role" dir={isRtl ? "rtl" : "ltr"}>
@@ -482,6 +565,92 @@ function UsersContent() {
                 </Select>
               </div>
 
+              {editingUser.role === "moderator" && (
+                <div className="space-y-4 rounded-lg border p-4">
+                  <div className="space-y-1 text-start">
+                    <h3 className="font-medium">
+                      {isRtl
+                        ? "صلاحيات صفحات الداشبورد"
+                        : "Dashboard Page Access"}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {isRtl
+                        ? "حدد الصفحات التي تظهر لهذا المودريتور داخل لوحة التحكم."
+                        : "Choose which dashboard pages should be visible to this moderator."}
+                    </p>
+                  </div>
+
+                  <div className="rounded-lg border bg-muted/40 p-3">
+                    <p className="text-sm font-medium">
+                      {isRtl
+                        ? "الصفحات المفعلة حاليًا"
+                        : "Currently enabled pages"}
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {selectedDashboardAccess.map((href) => (
+                        <Badge key={href} variant="secondary">
+                          {getDashboardAccessTitle(href)}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {MODERATOR_DASHBOARD_ACCESS_GROUPS.map((group) => (
+                      <div
+                        key={group.id}
+                        className="rounded-lg border border-dashed p-3"
+                      >
+                        <p className="mb-3 font-medium">
+                          {isRtl ? group.label.ar : group.label.en}
+                        </p>
+
+                        <div className="space-y-3">
+                          {group.items.map((item) => {
+                            const isChecked = selectedDashboardAccess.includes(
+                              item.href
+                            );
+                            const isLastSelected =
+                              isChecked && selectedDashboardAccess.length === 1;
+
+                            return (
+                              <label
+                                key={item.href}
+                                className="flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors hover:border-primary/40"
+                              >
+                                <Checkbox
+                                  checked={isChecked}
+                                  disabled={isLastSelected}
+                                  onCheckedChange={(checked) =>
+                                    handleToggleDashboardAccess(
+                                      item.href,
+                                      checked === true
+                                    )
+                                  }
+                                />
+                                <div className="space-y-1">
+                                  <p className="font-medium leading-none">
+                                    {getDashboardAccessTitle(item.href)}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {item.href}
+                                  </p>
+                                </div>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <p className="text-xs text-muted-foreground">
+                    {isRtl
+                      ? "يجب ترك صفحة واحدة على الأقل مفعلة لهذا المودريتور."
+                      : "Keep at least one dashboard page enabled for this moderator."}
+                  </p>
+                </div>
+              )}
             </div>
             <DialogFooter className="gap-2 justify-start">
               <Button

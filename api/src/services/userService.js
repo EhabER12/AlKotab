@@ -139,6 +139,23 @@ export class UserService {
       delete userData.name;
     }
 
+    if (userData.employeeInfo && typeof userData.employeeInfo === "object") {
+      if (
+        Object.prototype.hasOwnProperty.call(
+          userData.employeeInfo,
+          "dashboardAccess"
+        )
+      ) {
+        userData["employeeInfo.dashboardAccess"] = Array.isArray(
+          userData.employeeInfo.dashboardAccess
+        )
+          ? userData.employeeInfo.dashboardAccess
+          : [];
+
+        delete userData.employeeInfo;
+      }
+    }
+
     return this.userRepository.update(id, userData);
   }
 
