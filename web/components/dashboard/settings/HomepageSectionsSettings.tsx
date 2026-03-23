@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { LanguageSwitcher } from "@/components/dashboard/common/LanguageSwitcher";
 import {
   DEFAULT_HERO_TEXT_SIZES,
   DEFAULT_METHODOLOGY_STEPS,
@@ -30,6 +31,7 @@ interface HomepageSectionsSettingsProps {
   sections: HomepageSections;
   setSections: (sections: HomepageSections) => void;
   formLang: "en" | "ar";
+  setFormLang?: (lang: "en" | "ar") => void;
   heroBackgroundPreview?: string | null;
   setHeroBackgroundPreview?: (preview: string | null) => void;
   onHeroBackgroundFileChange?: (file: File | null) => void;
@@ -64,6 +66,7 @@ export const HomepageSectionsSettings: React.FC<
   sections,
   setSections,
   formLang,
+  setFormLang,
   heroBackgroundPreview,
   setHeroBackgroundPreview,
   onHeroBackgroundFileChange,
@@ -284,15 +287,25 @@ export const HomepageSectionsSettings: React.FC<
         </div>
 
         <div className="space-y-4 rounded-lg border p-4">
-          <div>
-            <Label className="text-base font-medium">
-              {formLang === "ar" ? "خطوات المنهجية" : "Methodology Steps"}
-            </Label>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {formLang === "ar"
-                ? "عدّل عناوين ووصف خطوات الـ timeline للغة الحالية."
-                : "Edit the timeline step labels and descriptions for the current language."}
-            </p>
+          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div>
+              <Label className="text-base font-medium">
+                {formLang === "ar" ? "خطوات المنهجية" : "Methodology Steps"}
+              </Label>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {formLang === "ar"
+                  ? "عدّل عناوين ووصف خطوات الـ timeline للغة الحالية."
+                  : "Edit the timeline step labels and descriptions for the current language."}
+              </p>
+            </div>
+
+            {setFormLang ? (
+              <LanguageSwitcher
+                className="self-start"
+                language={formLang}
+                setLanguage={setFormLang}
+              />
+            ) : null}
           </div>
 
           <div className="grid grid-cols-1 gap-4">

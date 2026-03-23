@@ -2061,6 +2061,7 @@ export default function SettingsDashboardPage() {
               sections={homepageSections}
               setSections={setHomepageSections}
               formLang={formLang}
+              setFormLang={setFormLang}
               heroBackgroundPreview={heroBackgroundPreview}
               setHeroBackgroundPreview={setHeroBackgroundPreview}
               onHeroBackgroundFileChange={(file) => {

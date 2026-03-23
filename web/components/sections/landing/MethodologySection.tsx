@@ -4,7 +4,6 @@ import { useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
-import { Search, Map, Rocket, TrendingUp } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { PublicWebsiteSettingsData } from "@/store/services/settingsService";
 
@@ -33,8 +32,7 @@ export function MethodologySection({
 
   const steps = [
     {
-      number: "01",
-      icon: Search,
+      number: "1",
       title:
         (isRtl
           ? methodologySettings?.steps?.[0]?.title?.ar
@@ -49,8 +47,7 @@ export function MethodologySection({
           : methodologySettings?.steps?.[0]?.description?.en) || t("step1Desc"),
     },
     {
-      number: "02",
-      icon: Map,
+      number: "2",
       title:
         (isRtl
           ? methodologySettings?.steps?.[1]?.title?.ar
@@ -65,8 +62,7 @@ export function MethodologySection({
           : methodologySettings?.steps?.[1]?.description?.en) || t("step2Desc"),
     },
     {
-      number: "03",
-      icon: Rocket,
+      number: "3",
       title:
         (isRtl
           ? methodologySettings?.steps?.[2]?.title?.ar
@@ -81,8 +77,7 @@ export function MethodologySection({
           : methodologySettings?.steps?.[2]?.description?.en) || t("step3Desc"),
     },
     {
-      number: "04",
-      icon: TrendingUp,
+      number: "4",
       title:
         (isRtl
           ? methodologySettings?.steps?.[3]?.title?.ar
@@ -154,9 +149,11 @@ export function MethodologySection({
                   isRtl ? "flex-row-reverse" : ""
                 }`}
               >
-                {/* Icon */}
+                {/* Step Number */}
                 <div className="flex-shrink-0 w-16 h-16 rounded-2xl bg-white shadow-lg flex items-center justify-center border border-genoun-gold/20">
-                  <step.icon className="w-8 h-8 text-genoun-green" />
+                  <span className="text-2xl font-bold text-genoun-green">
+                    {step.number}
+                  </span>
                 </div>
 
                 {/* Content */}
@@ -170,9 +167,6 @@ export function MethodologySection({
                       isRtl ? "flex-row-reverse justify-end" : ""
                     }`}
                   >
-                    <span className="text-sm font-bold text-genoun-gold">
-                      {step.number}
-                    </span>
                     <span className="text-xs uppercase tracking-wider text-gray-400">
                       {step.titleEn}
                     </span>
