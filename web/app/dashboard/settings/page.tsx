@@ -178,6 +178,14 @@ const mergeMethodologySteps = (
     };
   });
 
+const mergeLocalizedText = (
+  base: { ar: string; en: string },
+  value?: Partial<{ ar: string; en: string }>
+): { ar: string; en: string } => ({
+  ar: value?.ar ?? base.ar,
+  en: value?.en ?? base.en,
+});
+
 export default function SettingsDashboardPage() {
   const dispatch = useAppDispatch();
   const { t, isRtl } = useAdminLocale();
@@ -431,26 +439,26 @@ export default function SettingsDashboardPage() {
           hero: {
             ...prev.hero,
             ...(homepageSectionsFromSettings.hero || {}),
-            badge: {
-              ...prev.hero.badge,
-              ...(homepageSectionsFromSettings.hero?.badge || {}),
-            },
-            title: {
-              ...prev.hero.title,
-              ...(homepageSectionsFromSettings.hero?.title || {}),
-            },
-            subtitle: {
-              ...prev.hero.subtitle,
-              ...(homepageSectionsFromSettings.hero?.subtitle || {}),
-            },
-            content: {
-              ...prev.hero.content,
-              ...(homepageSectionsFromSettings.hero?.content || {}),
-            },
-            buttonText: {
-              ...prev.hero.buttonText,
-              ...(homepageSectionsFromSettings.hero?.buttonText || {}),
-            },
+            badge: mergeLocalizedText(
+              prev.hero.badge ?? { ar: "", en: "" },
+              homepageSectionsFromSettings.hero?.badge
+            ),
+            title: mergeLocalizedText(
+              prev.hero.title,
+              homepageSectionsFromSettings.hero?.title
+            ),
+            subtitle: mergeLocalizedText(
+              prev.hero.subtitle,
+              homepageSectionsFromSettings.hero?.subtitle
+            ),
+            content: mergeLocalizedText(
+              prev.hero.content,
+              homepageSectionsFromSettings.hero?.content
+            ),
+            buttonText: mergeLocalizedText(
+              prev.hero.buttonText,
+              homepageSectionsFromSettings.hero?.buttonText
+            ),
             textSizes: {
               ...DEFAULT_HERO_TEXT_SIZES,
               ...(homepageSectionsFromSettings.hero?.textSizes || {}),

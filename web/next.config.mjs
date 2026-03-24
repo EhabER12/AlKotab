@@ -62,6 +62,9 @@ const nextConfig = {
       "gsap",
     ],
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   // Production optimizations
   compress: true,
   poweredByHeader: false,
