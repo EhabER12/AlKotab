@@ -37,6 +37,23 @@ interface HomepageSectionsSettingsProps {
   onHeroBackgroundFileChange?: (file: File | null) => void;
 }
 
+type LocalizedText = {
+  ar: string;
+  en: string;
+};
+
+const EMPTY_LOCALIZED_TEXT: LocalizedText = {
+  ar: "",
+  en: "",
+};
+
+const getLocalizedTextValues = (
+  value?: Partial<LocalizedText>
+): LocalizedText => ({
+  ...EMPTY_LOCALIZED_TEXT,
+  ...(value || {}),
+});
+
 const getDefaultMethodologySteps = (): MethodologyStep[] =>
   DEFAULT_METHODOLOGY_STEPS.map((step) => ({
     title: { ...step.title },
@@ -382,6 +399,11 @@ export const HomepageSectionsSettings: React.FC<
     if (!section) return null;
 
     const isMethodologySection = key === "about";
+    const badge = getLocalizedTextValues(section.badge);
+    const title = getLocalizedTextValues(section.title);
+    const subtitle = getLocalizedTextValues(section.subtitle);
+    const content = getLocalizedTextValues(section.content);
+    const buttonText = getLocalizedTextValues(section.buttonText);
 
     return (
       <Card key={key} className="mb-6">
@@ -410,7 +432,7 @@ export const HomepageSectionsSettings: React.FC<
               <div className="space-y-2">
                 <Label>{formLang === "ar" ? "الشارة (عربي)" : "Badge (Arabic)"}</Label>
                 <Input
-                  value={section.badge?.ar || ""}
+                  value={badge.ar}
                   onChange={(e) => updateSection(key, "badge_ar", e.target.value)}
                   dir="rtl"
                   placeholder={
@@ -423,7 +445,7 @@ export const HomepageSectionsSettings: React.FC<
               <div className="space-y-2">
                 <Label>{formLang === "ar" ? "الشارة (إنجليزي)" : "Badge (English)"}</Label>
                 <Input
-                  value={section.badge?.en || ""}
+                  value={badge.en}
                   onChange={(e) => updateSection(key, "badge_en", e.target.value)}
                   placeholder="e.g., Your Complete Quran Learning Platform"
                 />
@@ -435,7 +457,7 @@ export const HomepageSectionsSettings: React.FC<
             <div className="space-y-2">
               <Label>{formLang === "ar" ? "العنوان (عربي)" : "Title (Arabic)"}</Label>
               <Input
-                value={section.title.ar}
+                value={title.ar}
                 onChange={(e) => updateSection(key, "title_ar", e.target.value)}
                 dir="rtl"
               />
@@ -443,29 +465,31 @@ export const HomepageSectionsSettings: React.FC<
             <div className="space-y-2">
               <Label>{formLang === "ar" ? "العنوان (إنجليزي)" : "Title (English)"}</Label>
               <Input
-                value={section.title.en}
+                value={title.en}
                 onChange={(e) => updateSection(key, "title_en", e.target.value)}
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label>{formLang === "ar" ? "العنوان الفرعي (عربي)" : "Subtitle (Arabic)"}</Label>
-              <Input
-                value={section.subtitle.ar}
-                onChange={(e) => updateSection(key, "subtitle_ar", e.target.value)}
-                dir="rtl"
-              />
+          {key !== "hero" && (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>{formLang === "ar" ? "العنوان الفرعي (عربي)" : "Subtitle (Arabic)"}</Label>
+                <Input
+                  value={subtitle.ar}
+                  onChange={(e) => updateSection(key, "subtitle_ar", e.target.value)}
+                  dir="rtl"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>{formLang === "ar" ? "العنوان الفرعي (إنجليزي)" : "Subtitle (English)"}</Label>
+                <Input
+                  value={subtitle.en}
+                  onChange={(e) => updateSection(key, "subtitle_en", e.target.value)}
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>{formLang === "ar" ? "العنوان الفرعي (إنجليزي)" : "Subtitle (English)"}</Label>
-              <Input
-                value={section.subtitle.en}
-                onChange={(e) => updateSection(key, "subtitle_en", e.target.value)}
-              />
-            </div>
-          </div>
+          )}
 
           {renderMethodologyInputs(key, section)}
 
@@ -473,17 +497,97 @@ export const HomepageSectionsSettings: React.FC<
 
           {!isMethodologySection && (
             <>
-              <div className="space-y-2">
-                <Label>{formLang === "ar" ? "المحتوى" : "Content"}</Label>
-                <Textarea
-                  value={formLang === "ar" ? section.content.ar : section.content.en}
-                  onChange={(e) =>
-                    updateSection(key, `content_${formLang}`, e.target.value)
-                  }
-                  dir={formLang === "ar" ? "rtl" : "ltr"}
-                  rows={4}
-                />
-              </div>
+              {key === "hero" ? (
+                <div className="space-y-4 rounded-lg border p-4">
+                  <div>
+                    <Label className="text-base font-medium">
+                      {formLang === "ar"
+                        ? "نص الساب تايتل في الهيرو"
+                        : "Hero Subtitle Copy"}
+                    </Label>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {formLang === "ar"
+                        ? "خصّص بداية الوصف والنص المميز لكل لغة بشكل مستقل حتى لا تعتمد النسخة الإنجليزية على العربي."
+                        : "Customize the opening subtitle text and highlighted text independently for each language."}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>
+                        {formLang === "ar"
+                          ? "بداية الوصف (عربي)"
+                          : "Subtitle Start (Arabic)"}
+                      </Label>
+                      <Textarea
+                        value={subtitle.ar}
+                        onChange={(e) =>
+                          updateSection(key, "subtitle_ar", e.target.value)
+                        }
+                        dir="rtl"
+                        rows={3}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>
+                        {formLang === "ar"
+                          ? "بداية الوصف (إنجليزي)"
+                          : "Subtitle Start (English)"}
+                      </Label>
+                      <Textarea
+                        value={subtitle.en}
+                        onChange={(e) =>
+                          updateSection(key, "subtitle_en", e.target.value)
+                        }
+                        dir="ltr"
+                        rows={3}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>
+                        {formLang === "ar"
+                          ? "النص المميز (عربي)"
+                          : "Highlighted Text (Arabic)"}
+                      </Label>
+                      <Textarea
+                        value={content.ar}
+                        onChange={(e) =>
+                          updateSection(key, "content_ar", e.target.value)
+                        }
+                        dir="rtl"
+                        rows={2}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>
+                        {formLang === "ar"
+                          ? "النص المميز (إنجليزي)"
+                          : "Highlighted Text (English)"}
+                      </Label>
+                      <Textarea
+                        value={content.en}
+                        onChange={(e) =>
+                          updateSection(key, "content_en", e.target.value)
+                        }
+                        dir="ltr"
+                        rows={2}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label>{formLang === "ar" ? "المحتوى" : "Content"}</Label>
+                  <Textarea
+                    value={formLang === "ar" ? content.ar : content.en}
+                    onChange={(e) =>
+                      updateSection(key, `content_${formLang}`, e.target.value)
+                    }
+                    dir={formLang === "ar" ? "rtl" : "ltr"}
+                    rows={4}
+                  />
+                </div>
+              )}
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <div className="space-y-2">
@@ -491,7 +595,7 @@ export const HomepageSectionsSettings: React.FC<
                     {formLang === "ar" ? "نص الزر (عربي)" : "Button Text (Arabic)"}
                   </Label>
                   <Input
-                    value={section.buttonText.ar}
+                    value={buttonText.ar}
                     onChange={(e) =>
                       updateSection(key, "buttonText_ar", e.target.value)
                     }
@@ -505,7 +609,7 @@ export const HomepageSectionsSettings: React.FC<
                       : "Button Text (English)"}
                   </Label>
                   <Input
-                    value={section.buttonText.en}
+                    value={buttonText.en}
                     onChange={(e) =>
                       updateSection(key, "buttonText_en", e.target.value)
                     }

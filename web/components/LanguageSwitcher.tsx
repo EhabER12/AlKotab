@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Globe } from "lucide-react";
 import { locales, type Locale } from "@/i18n/request";
+import { SITE_LOCALE_COOKIE } from "@/lib/site-locale";
 
 const languageNames: Record<Locale, string> = {
   en: "English",
@@ -32,6 +33,8 @@ export function LanguageSwitcher({
   const t = useTranslations("common");
 
   const switchLocale = (newLocale: Locale) => {
+    document.cookie = `${SITE_LOCALE_COOKIE}=${newLocale}; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`;
+
     // Remove current locale from pathname and add new one
     const segments = pathname.split("/").filter(Boolean);
 

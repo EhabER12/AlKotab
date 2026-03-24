@@ -31,6 +31,7 @@ import { logout } from "@/store/services/authService";
 import { PublicWebsiteSettingsData } from "@/store/services/settingsService";
 import MarketingBanner from "./MarketingBanner";
 import { CurrencySwitcher } from "@/components/currency/CurrencySwitcher";
+import { SITE_LOCALE_COOKIE } from "@/lib/site-locale";
 
 interface HeaderProps {
   settings?: PublicWebsiteSettingsData | null;
@@ -113,6 +114,8 @@ export default function Header({ settings }: HeaderProps) {
   }, []);
 
   const switchLocale = (newLocale: "ar" | "en") => {
+    document.cookie = `${SITE_LOCALE_COOKIE}=${newLocale}; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`;
+
     const segments = pathname.split("/").filter(Boolean);
     if (segments[0] === "en" || segments[0] === "ar") {
       segments[0] = newLocale;

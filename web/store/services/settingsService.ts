@@ -417,6 +417,7 @@ export interface WebsiteSettingsData {
   siteName_ar?: string;
   siteDescription: string;
   siteDescription_ar?: string;
+  defaultSiteLanguage?: "ar" | "en";
   logo: string;
   logo_ar?: string;
   favicon: string;
@@ -464,6 +465,7 @@ export interface PublicWebsiteSettingsData {
   siteName_ar?: string;
   siteDescription: string;
   siteDescription_ar?: string;
+  defaultSiteLanguage?: "ar" | "en";
   logo: string;
   logo_ar?: string;
   favicon: string;

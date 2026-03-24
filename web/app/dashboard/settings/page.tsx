@@ -379,6 +379,7 @@ export default function SettingsDashboardPage() {
         siteName_ar: settings.siteName_ar || "",
         siteDescription: settings.siteDescription,
         siteDescription_ar: settings.siteDescription_ar || "",
+        defaultSiteLanguage: settings.defaultSiteLanguage || "ar",
         contactEmail: settings.contactEmail,
         contactPhone: settings.contactPhone,
         whatsappNumber: settings.whatsappNumber || "",
@@ -430,6 +431,26 @@ export default function SettingsDashboardPage() {
           hero: {
             ...prev.hero,
             ...(homepageSectionsFromSettings.hero || {}),
+            badge: {
+              ...prev.hero.badge,
+              ...(homepageSectionsFromSettings.hero?.badge || {}),
+            },
+            title: {
+              ...prev.hero.title,
+              ...(homepageSectionsFromSettings.hero?.title || {}),
+            },
+            subtitle: {
+              ...prev.hero.subtitle,
+              ...(homepageSectionsFromSettings.hero?.subtitle || {}),
+            },
+            content: {
+              ...prev.hero.content,
+              ...(homepageSectionsFromSettings.hero?.content || {}),
+            },
+            buttonText: {
+              ...prev.hero.buttonText,
+              ...(homepageSectionsFromSettings.hero?.buttonText || {}),
+            },
             textSizes: {
               ...DEFAULT_HERO_TEXT_SIZES,
               ...(homepageSectionsFromSettings.hero?.textSizes || {}),
@@ -1062,6 +1083,41 @@ export default function SettingsDashboardPage() {
                     disabled={isLoading}
                     dir={formLang === "ar" ? "rtl" : "ltr"}
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label>
+                    {isRtl ? "اللغة الأساسية للموقع" : "Default Site Language"}
+                  </Label>
+                  <Select
+                    value={(formData.defaultSiteLanguage as "ar" | "en") || "ar"}
+                    onValueChange={(value: "ar" | "en") =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        defaultSiteLanguage: value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue
+                        placeholder={
+                          isRtl ? "اختر اللغة الأساسية" : "Choose default language"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ar">
+                        {isRtl ? "العربية" : "Arabic"}
+                      </SelectItem>
+                      <SelectItem value="en">
+                        {isRtl ? "الإنجليزية" : "English"}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-muted-foreground">
+                    {isRtl
+                      ? "دي اللغة اللي الموقع يفتح بها تلقائيًا للزائر الجديد، مع بقاء زر تغيير اللغة في النافبار شغال عادي."
+                      : "New visitors will land on this language by default, while the navbar language switcher remains available."}
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="logo">

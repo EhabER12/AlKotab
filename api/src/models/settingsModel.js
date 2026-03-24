@@ -920,6 +920,11 @@ const settingsSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    defaultSiteLanguage: {
+      type: String,
+      enum: ["ar", "en"],
+      default: "ar",
+    },
     logo: {
       type: String,
     },
