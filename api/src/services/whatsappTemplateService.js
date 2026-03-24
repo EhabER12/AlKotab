@@ -14,13 +14,37 @@ const DEFAULT_DELIVERY_SETTINGS = {
 
 const DEFAULT_TEMPLATES = [
   {
+    name: "student_registration_welcome",
+    label: {
+      ar: "ترحيب الطالب الجديد",
+      en: "New Student Welcome",
+    },
+    type: "registration",
+    order: 1,
+    isActive: true,
+    content: {
+      ar: "مرحباً {name}،\n\nتم إنشاء حسابك بنجاح على منصة AlKotab.\n{verificationLine}\nالبريد الإلكتروني: {email}\nرقمك المسجل: {phone}\nرابط الدخول: {loginUrl}\n\nنسعد بانضمامك إلينا.",
+      en: "Hello {name},\n\nYour account has been created successfully on AlKotab.\n{verificationLine}\nEmail: {email}\nRegistered number: {phone}\nLogin URL: {loginUrl}\n\nWe are happy to have you with us.",
+    },
+    variables: [
+      { name: "name", description: "Student full name" },
+      { name: "email", description: "Student email address" },
+      { name: "phone", description: "Student phone number" },
+      { name: "loginUrl", description: "Login page URL" },
+      {
+        name: "verificationLine",
+        description: "Verification or activation note shown to the student",
+      },
+    ],
+  },
+  {
     name: "welcome_message",
     label: {
       ar: "رسالة الترحيب",
       en: "Welcome Message",
     },
     type: "welcome",
-    order: 1,
+    order: 2,
     isActive: true,
     content: {
       ar: "مرحباً {name}،\n\nأهلاً بك معنا{groupLine}{teacherLine}.\n{data}",
@@ -40,7 +64,7 @@ const DEFAULT_TEMPLATES = [
       en: "Overdue Subscription",
     },
     type: "subscription",
-    order: 2,
+    order: 3,
     isActive: true,
     content: {
       ar: "السلام عليكم {name}،\n\nنذكركم بأن الاشتراك متأخر.\nتاريخ الاستحقاق: {dueDate}\n{daysSummary}\n{teacherLine}\n{packageLine}\n\nللتجديد أو الاستفسار يمكنكم التواصل معنا على هذا الرقم.\nمع خالص التحية",
@@ -60,6 +84,7 @@ const DEFAULT_TEMPLATES = [
 ];
 
 const LEGACY_TEMPLATE_FALLBACKS = {
+  student_registration_welcome: ["student_registration_welcome"],
   welcome_message: ["welcome_message", "student_added_to_group", "student_group_active"],
   overdue_subscription: ["overdue_subscription", "subscription_reminder"],
 };

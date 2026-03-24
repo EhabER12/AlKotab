@@ -155,6 +155,7 @@ export const register = createAsyncThunk<
     fullName: { ar: string; en: string };
     email: string;
     phone: string;
+    lang?: "ar" | "en";
     password: string;
     confirmPassword: string;
     role?: string;

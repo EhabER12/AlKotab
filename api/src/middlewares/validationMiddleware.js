@@ -63,6 +63,7 @@ export const schemas = {
         }).required(),
         email: Joi.string().email().required(),
         phone: Joi.string().optional().allow(""),
+        lang: Joi.string().valid("ar", "en").optional(),
         password: Joi.string().min(6).required(),
         confirmPassword: Joi.string()
           .valid(Joi.ref("password"))

@@ -12,6 +12,7 @@ import emailTemplateService from "./emailTemplateService.js";
 import { EmailService } from "./emailService.js";
 import Settings from "../models/settingsModel.js";
 import logger from "../utils/logger.js";
+import { WhatsappNotificationService } from "./whatsappNotificationService.js";
 
 // Password reset token expiry (1 hour)
 const PASSWORD_RESET_EXPIRY = 60 * 60 * 1000;
@@ -22,6 +23,7 @@ export class AuthService {
   constructor() {
     this.userRepository = new UserRepository();
     this.emailService = new EmailService();
+    this.whatsappService = new WhatsappNotificationService();
   }
 
   async isEmailVerificationRequired() {
@@ -44,7 +46,9 @@ export class AuthService {
   }
 
   async register(userData) {
-    const { email, password, confirmPassword, fullName, phone, role } = userData;
+    const { email, password, confirmPassword, fullName, phone, role, lang } =
+      userData;
+    const safeLang = lang === "en" ? "en" : "ar";
 
     // Check if passwords match
     if (password !== confirmPassword) {
@@ -98,6 +102,15 @@ export class AuthService {
     // Create user
     const user = await this.userRepository.create(userPayload);
 
+    this.sendStudentWelcomeWhatsApp(user, safeLang, {
+      requireEmailVerification,
+    }).catch((error) => {
+      logger.warn("Failed to send student welcome WhatsApp", {
+        userId: user._id,
+        error: error.message,
+      });
+    });
+
     if (requireEmailVerification && verificationToken) {
       await this.sendVerificationEmail(user, verificationToken);
     }
@@ -117,7 +130,7 @@ export class AuthService {
     }
 
     // Generate tokens and allow immediate access if verification is disabled
-    await this.sendStudentWelcomeEmail(user);
+    await this.sendStudentWelcomeEmail(user, safeLang);
     const tokens = generateTokenPair(user._id);
 
     return {
@@ -161,18 +174,23 @@ export class AuthService {
     if (!user || user.role !== "user") return;
 
     const baseUrl = process.env.CLIENT_URL || process.env.WEBSITE_URL || "";
-    const loginUrl = `${baseUrl}/ar/login`;
+    const safeLang = lang === "en" ? "en" : "ar";
+    const loginUrl = `${baseUrl}/${safeLang}/login`;
 
     try {
       await emailTemplateService.sendTemplatedEmail(
         user.email,
         "student_welcome",
         {
-          name: user.fullName?.ar || user.fullName?.en || "Student",
+          name:
+            user.fullName?.[safeLang] ||
+            user.fullName?.ar ||
+            user.fullName?.en ||
+            "Student",
           loginUrl,
           year: new Date().getFullYear(),
         },
-        lang
+        safeLang
       );
       logger.info("Student welcome email sent", { userId: user._id, email: user.email });
     } catch (error) {
@@ -245,6 +263,50 @@ export class AuthService {
     }
 
     return responseData;
+  }
+
+  async sendStudentWelcomeWhatsApp(
+    user,
+    lang = "ar",
+    { requireEmailVerification = false } = {}
+  ) {
+    if (!user || user.role !== "user") return;
+    if (!user.phone || !String(user.phone).trim()) return;
+    if (!this.whatsappService.isConfigured()) return;
+
+    const safeLang = lang === "en" ? "en" : "ar";
+    const baseUrl = process.env.CLIENT_URL || process.env.WEBSITE_URL || "";
+    const loginUrl = `${baseUrl}/${safeLang}/login`;
+    const name =
+      user.fullName?.[safeLang] ||
+      user.fullName?.ar ||
+      user.fullName?.en ||
+      user.name ||
+      "Student";
+    const verificationLine =
+      safeLang === "en"
+        ? requireEmailVerification
+          ? "Please verify your email before logging in."
+          : "You can log in and start right away."
+        : requireEmailVerification
+          ? "يرجى تأكيد بريدك الإلكتروني قبل تسجيل الدخول."
+          : "يمكنك تسجيل الدخول والبدء مباشرة.";
+
+    await this.whatsappService.sendTemplateMessage(
+      user.phone,
+      "student_registration_welcome",
+      {
+        name,
+        email: user.email || "",
+        phone: user.phone || "",
+        loginUrl,
+        verificationLine,
+      },
+      {
+        lang: safeLang,
+        recipientName: name,
+      }
+    );
   }
 
   async getProfile(userId) {

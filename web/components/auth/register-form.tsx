@@ -77,6 +77,7 @@ export function RegisterForm({ locale = 'ar' }: { locale?: string }) {
             },
             email: values.email,
             phone: values.phone,
+            lang: locale === "en" ? "en" : "ar",
             password: values.password,
             confirmPassword: values.confirmPassword,
           } as any)
