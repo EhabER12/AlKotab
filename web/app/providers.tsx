@@ -5,12 +5,19 @@ import { store } from "../store";
 import { AuthProvider } from "../components/auth/auth-provider";
 import { CurrencyProvider } from "../contexts/CurrencyContext";
 import { Toaster } from "react-hot-toast";
+import type { CurrencyCode } from "@/lib/currency";
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({
+  children,
+  initialCurrency,
+}: {
+  children: React.ReactNode;
+  initialCurrency: CurrencyCode;
+}) {
   return (
     <Provider store={store}>
       <AuthProvider>
-        <CurrencyProvider>
+        <CurrencyProvider initialCurrency={initialCurrency}>
           {children}
           <Toaster
             position="top-center"

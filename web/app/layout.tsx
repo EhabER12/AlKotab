@@ -1,6 +1,7 @@
 import React from "react";
 import type { Metadata, Viewport } from "next";
 import { Outfit } from "next/font/google";
+import { cookies, headers } from "next/headers";
 import "./globals.css";
 import "../styles/nprogress.css";
 import { Providers } from "./providers";
@@ -8,6 +9,12 @@ import { LazyAnalytics } from "@/components/analytics/LazyAnalytics";
 import { FloatingWhatsApp } from "@/components/ui/FloatingWhatsApp";
 import { NavigationProgress } from "@/components/NavigationProgress";
 import { Zain } from "next/font/google";
+import {
+  detectCountryCodeFromHeaders,
+  isCurrencyCode,
+  PREFERRED_CURRENCY_COOKIE,
+  resolveCurrencyFromCountryCode,
+} from "@/lib/currency";
 import { fetchSettings } from "@/lib/settings";
 
 // Arabic font - optimized loading via next/font
@@ -36,9 +43,18 @@ export default async function RootLayout({
   children: React.ReactNode;
   params: Promise<{ locale: string }>;
 }) {
-  const settings = await fetchSettings();
+  const [settings, cookieStore, headerStore] = await Promise.all([
+    fetchSettings(),
+    cookies(),
+    headers(),
+  ]);
   const data = settings.data || {};
   const gaId = process.env.NEXT_PUBLIC_GA_ID || "";
+  const savedCurrency = cookieStore.get(PREFERRED_CURRENCY_COOKIE)?.value;
+  const detectedCountryCode = detectCountryCodeFromHeaders(headerStore);
+  const initialCurrency = isCurrencyCode(savedCurrency)
+    ? savedCurrency
+    : resolveCurrencyFromCountryCode(detectedCountryCode);
 
   // Await params to get locale (might be undefined if at root)
   const resolvedParams = await params;
@@ -99,7 +115,7 @@ export default async function RootLayout({
         <style suppressHydrationWarning dangerouslySetInnerHTML={{ __html: colorVars }} />
       </head>
       <body suppressHydrationWarning>
-        <Providers>
+        <Providers initialCurrency={initialCurrency}>
           <script
             suppressHydrationWarning
             dangerouslySetInnerHTML={{

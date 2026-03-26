@@ -2,8 +2,12 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import axiosInstance from "@/lib/axios";
-
-type CurrencyCode = "SAR" | "EGP" | "USD";
+import {
+  isCurrencyCode,
+  PREFERRED_CURRENCY_COOKIE,
+  PREFERRED_CURRENCY_STORAGE_KEY,
+  type CurrencyCode,
+} from "@/lib/currency";
 
 interface ExchangeRates {
   USD: number;
@@ -56,8 +60,17 @@ const currencyConfigs: Record<CurrencyCode, CurrencyConfig> = {
 
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
 
-export function CurrencyProvider({ children }: { children: ReactNode }) {
-  const [selectedCurrency, setSelectedCurrencyState] = useState<CurrencyCode>("EGP");
+const CURRENCY_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+
+export function CurrencyProvider({
+  children,
+  initialCurrency,
+}: {
+  children: ReactNode;
+  initialCurrency: CurrencyCode;
+}) {
+  const [selectedCurrency, setSelectedCurrencyState] =
+    useState<CurrencyCode>(initialCurrency);
   const [baseCurrency, setBaseCurrency] = useState<CurrencyCode>("EGP");
   const [exchangeRates, setExchangeRates] = useState<ExchangeRates>({
     USD: 1,
@@ -89,19 +102,21 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
 
   // Load user's preferred currency from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem("preferredCurrency");
-    if (saved && (saved === "SAR" || saved === "EGP" || saved === "USD")) {
-      setSelectedCurrencyState(saved as CurrencyCode);
+    const saved = localStorage.getItem(PREFERRED_CURRENCY_STORAGE_KEY);
+
+    if (isCurrencyCode(saved)) {
+      setSelectedCurrencyState(saved);
+      document.cookie = `${PREFERRED_CURRENCY_COOKIE}=${saved}; path=/; max-age=${CURRENCY_COOKIE_MAX_AGE}; samesite=lax`;
     } else {
-      // Site-wide storefront default is EGP unless the user picked another currency.
-      setSelectedCurrencyState("EGP");
+      setSelectedCurrencyState(initialCurrency);
     }
-  }, [baseCurrency]);
+  }, [initialCurrency]);
 
   // Save selected currency to localStorage
   const setSelectedCurrency = (currency: CurrencyCode) => {
     setSelectedCurrencyState(currency);
-    localStorage.setItem("preferredCurrency", currency);
+    localStorage.setItem(PREFERRED_CURRENCY_STORAGE_KEY, currency);
+    document.cookie = `${PREFERRED_CURRENCY_COOKIE}=${currency}; path=/; max-age=${CURRENCY_COOKIE_MAX_AGE}; samesite=lax`;
   };
 
   // Convert currency
