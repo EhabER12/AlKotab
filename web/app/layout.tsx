@@ -13,7 +13,9 @@ import {
   detectCountryCodeFromHeaders,
   isCurrencyCode,
   PREFERRED_CURRENCY_COOKIE,
+  PREFERRED_CURRENCY_SOURCE_COOKIE,
   resolveCurrencyFromCountryCode,
+  isManualCurrencyPreference,
 } from "@/lib/currency";
 import { fetchSettings } from "@/lib/settings";
 
@@ -51,8 +53,13 @@ export default async function RootLayout({
   const data = settings.data || {};
   const gaId = process.env.NEXT_PUBLIC_GA_ID || "";
   const savedCurrency = cookieStore.get(PREFERRED_CURRENCY_COOKIE)?.value;
+  const savedCurrencySource = cookieStore.get(
+    PREFERRED_CURRENCY_SOURCE_COOKIE
+  )?.value;
   const detectedCountryCode = detectCountryCodeFromHeaders(headerStore);
-  const initialCurrency = isCurrencyCode(savedCurrency)
+  const initialCurrency =
+    isCurrencyCode(savedCurrency) &&
+    isManualCurrencyPreference(savedCurrencySource)
     ? savedCurrency
     : resolveCurrencyFromCountryCode(detectedCountryCode);
 

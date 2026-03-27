@@ -3,9 +3,14 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import axiosInstance from "@/lib/axios";
 import {
+  detectCountryCodeFromGeoApis,
   isCurrencyCode,
+  isManualCurrencyPreference,
   PREFERRED_CURRENCY_COOKIE,
+  PREFERRED_CURRENCY_SOURCE_COOKIE,
   PREFERRED_CURRENCY_STORAGE_KEY,
+  PREFERRED_CURRENCY_SOURCE_STORAGE_KEY,
+  resolveCurrencyFromCountryCode,
   type CurrencyCode,
 } from "@/lib/currency";
 
@@ -77,7 +82,15 @@ export function CurrencyProvider({
     SAR: 3.75,
     EGP: 50.0,
   });
-  const [isLoading, setIsLoading] = useState(true);
+  const [isSettingsLoading, setIsSettingsLoading] = useState(true);
+  const [isCurrencyLoading, setIsCurrencyLoading] = useState(true);
+
+  const persistManualCurrencyPreference = (currency: CurrencyCode) => {
+    localStorage.setItem(PREFERRED_CURRENCY_STORAGE_KEY, currency);
+    localStorage.setItem(PREFERRED_CURRENCY_SOURCE_STORAGE_KEY, "manual");
+    document.cookie = `${PREFERRED_CURRENCY_COOKIE}=${currency}; path=/; max-age=${CURRENCY_COOKIE_MAX_AGE}; samesite=lax`;
+    document.cookie = `${PREFERRED_CURRENCY_SOURCE_COOKIE}=manual; path=/; max-age=${CURRENCY_COOKIE_MAX_AGE}; samesite=lax`;
+  };
 
   // Load currency settings from API
   useEffect(() => {
@@ -93,30 +106,68 @@ export function CurrencyProvider({
       } catch (error) {
         console.error("Failed to load currency settings:", error);
       } finally {
-        setIsLoading(false);
+        setIsSettingsLoading(false);
       }
     };
 
     fetchCurrencySettings();
   }, []);
 
-  // Load user's preferred currency from localStorage
+  // Load user's preferred currency if it was explicitly chosen by the user.
   useEffect(() => {
-    const saved = localStorage.getItem(PREFERRED_CURRENCY_STORAGE_KEY);
+    let isCancelled = false;
 
-    if (isCurrencyCode(saved)) {
-      setSelectedCurrencyState(saved);
-      document.cookie = `${PREFERRED_CURRENCY_COOKIE}=${saved}; path=/; max-age=${CURRENCY_COOKIE_MAX_AGE}; samesite=lax`;
-    } else {
+    const loadCurrencyPreference = async () => {
+      const savedCurrency = localStorage.getItem(PREFERRED_CURRENCY_STORAGE_KEY);
+      const savedSource = localStorage.getItem(
+        PREFERRED_CURRENCY_SOURCE_STORAGE_KEY
+      );
+
+      if (
+        isCurrencyCode(savedCurrency) &&
+        isManualCurrencyPreference(savedSource)
+      ) {
+        setSelectedCurrencyState(savedCurrency);
+        persistManualCurrencyPreference(savedCurrency);
+        if (!isCancelled) {
+          setIsCurrencyLoading(false);
+        }
+        return;
+      }
+
       setSelectedCurrencyState(initialCurrency);
-    }
+
+      try {
+        const detectedCountryCode = await detectCountryCodeFromGeoApis();
+        const detectedCurrency = resolveCurrencyFromCountryCode(
+          detectedCountryCode
+        );
+
+        if (!isCancelled) {
+          setSelectedCurrencyState(detectedCurrency);
+        }
+      } catch {
+        if (!isCancelled) {
+          setSelectedCurrencyState(initialCurrency);
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsCurrencyLoading(false);
+        }
+      }
+    };
+
+    void loadCurrencyPreference();
+
+    return () => {
+      isCancelled = true;
+    };
   }, [initialCurrency]);
 
   // Save selected currency to localStorage
   const setSelectedCurrency = (currency: CurrencyCode) => {
     setSelectedCurrencyState(currency);
-    localStorage.setItem(PREFERRED_CURRENCY_STORAGE_KEY, currency);
-    document.cookie = `${PREFERRED_CURRENCY_COOKIE}=${currency}; path=/; max-age=${CURRENCY_COOKIE_MAX_AGE}; samesite=lax`;
+    persistManualCurrencyPreference(currency);
   };
 
   // Convert currency
@@ -171,7 +222,7 @@ export function CurrencyProvider({
         convert,
         format,
         getCurrencyConfig,
-        isLoading,
+        isLoading: isSettingsLoading || isCurrencyLoading,
       }}
     >
       {children}
