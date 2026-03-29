@@ -61,23 +61,29 @@ export const detectCountryCodeFromHeaders = (headerStore: {
 
 const GEO_LOOKUP_ENDPOINTS = [
   {
-    url: "https://ipwho.is/",
+    buildUrl: (ipAddress?: string) =>
+      `https://ipwho.is/${ipAddress ? encodeURIComponent(ipAddress) : ""}`,
     getCountryCode: (data: any) =>
       data?.success === false ? null : data?.country_code,
   },
   {
-    url: "https://ipapi.co/json/",
+    buildUrl: (ipAddress?: string) =>
+      ipAddress
+        ? `https://ipapi.co/${encodeURIComponent(ipAddress)}/json/`
+        : "https://ipapi.co/json/",
     getCountryCode: (data: any) => data?.country_code,
   },
 ] as const;
 
-export const detectCountryCodeFromGeoApis = async (): Promise<string | null> => {
+export const detectCountryCodeFromGeoApis = async (
+  ipAddress?: string
+): Promise<string | null> => {
   for (const endpoint of GEO_LOOKUP_ENDPOINTS) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 2500);
 
     try {
-      const response = await fetch(endpoint.url, {
+      const response = await fetch(endpoint.buildUrl(ipAddress), {
         cache: "no-store",
         signal: controller.signal,
       });

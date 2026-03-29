@@ -138,10 +138,24 @@ export function CurrencyProvider({
       setSelectedCurrencyState(initialCurrency);
 
       try {
+        const response = await fetch("/api/location/currency", {
+          cache: "no-store",
+        });
+
+        const locationData = await response.json();
+
+        if (
+          !isCancelled &&
+          isCurrencyCode(locationData?.currency) &&
+          locationData?.isLocationDetected
+        ) {
+          setSelectedCurrencyState(locationData.currency);
+          setIsCurrencyLoading(false);
+          return;
+        }
+
         const detectedCountryCode = await detectCountryCodeFromGeoApis();
-        const detectedCurrency = resolveCurrencyFromCountryCode(
-          detectedCountryCode
-        );
+        const detectedCurrency = resolveCurrencyFromCountryCode(detectedCountryCode);
 
         if (!isCancelled) {
           setSelectedCurrencyState(detectedCurrency);

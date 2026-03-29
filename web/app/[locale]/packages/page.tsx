@@ -17,6 +17,15 @@ import { Badge } from "@/components/ui/badge";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { getPackages, Package } from "@/store/services/packageService";
 import { useTranslations } from "next-intl";
+import { useCurrencyContext } from "@/contexts/CurrencyContext";
+
+const normalizeCurrency = (currency?: string): "SAR" | "EGP" | "USD" => {
+  if (currency === "SAR" || currency === "EGP" || currency === "USD") {
+    return currency;
+  }
+
+  return "EGP";
+};
 
 export default function PackagesPage() {
   const params = useParams();
@@ -24,6 +33,8 @@ export default function PackagesPage() {
   const isRtl = locale === "ar";
   const t = useTranslations();
   const dispatch = useAppDispatch();
+  const { selectedCurrency, convert, format, isLoading: isCurrencyLoading } =
+    useCurrencyContext();
 
   const { packages, isLoading } = useAppSelector((state) => state.packages);
 
@@ -36,7 +47,14 @@ export default function PackagesPage() {
     return text[locale] || text.en || text.ar || "";
   };
 
-  if (isLoading) {
+  const formatPackagePrice = (pkg: Package) =>
+    format(
+      convert(pkg.price, normalizeCurrency(pkg.currency), selectedCurrency),
+      selectedCurrency,
+      isRtl ? "ar" : "en"
+    );
+
+  if (isLoading || isCurrencyLoading) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -83,10 +101,7 @@ export default function PackagesPage() {
 
             <CardContent className="flex-1">
               <div className="mb-6">
-                <span className="text-4xl font-bold">{pkg.price}</span>
-                <span className="text-xl text-muted-foreground ml-1">
-                  {pkg.currency}
-                </span>
+                <span className="text-4xl font-bold">{formatPackagePrice(pkg)}</span>
                 <span className="text-muted-foreground ml-1 lowercase">
                   / {pkg.duration.value > 1 ? pkg.duration.value : ""} {isRtl 
                     ? (pkg.duration.unit === 'month' ? 'شهر' : pkg.duration.unit === 'week' ? 'أسبوع' : 'يوم')
