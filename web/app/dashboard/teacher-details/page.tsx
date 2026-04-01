@@ -77,7 +77,7 @@ export default function TeacherDetailsPage() {
       return;
     }
 
-    dispatch(getStudentMembers());
+    dispatch(getStudentMembers({}));
     dispatch(getAllTeachersWithStats());
   }, [dispatch, user, router]);
 

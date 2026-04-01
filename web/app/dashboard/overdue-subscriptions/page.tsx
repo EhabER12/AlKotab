@@ -104,7 +104,7 @@ export default function OverdueSubscriptionsPage() {
       return;
     }
 
-    dispatch(getStudentMembers());
+    dispatch(getStudentMembers({}));
     dispatch(
       getTeacherGroups({
         groupType: "group",

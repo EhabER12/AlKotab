@@ -146,7 +146,7 @@ export default function TeachersManagementPage() {
     if (isAdmin()) {
       dispatch(getAllTeachersWithStats());
     }
-    dispatch(getStudentMembers());
+    dispatch(getStudentMembers({}));
   }, [dispatch, user, router]);
 
   const toggleGroupExpand = (groupId: string) => {

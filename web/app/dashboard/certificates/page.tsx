@@ -165,7 +165,7 @@ export default function CertificatesPage() {
     dispatch(getCourses({}));
     dispatch(getAllUsers());
     dispatch(getAllTemplates());
-    dispatch(getStudentMembers());
+    dispatch(getStudentMembers({}));
   }, [dispatch, user, router]);
 
   useEffect(() => {
@@ -495,7 +495,7 @@ export default function CertificatesPage() {
       const sheetName = importSheetName.trim();
       const result = await dispatch(importStudentMembers({ file: importFile, sheetName })).unwrap();
       setImportResult(result.data);
-      dispatch(getStudentMembers());
+      dispatch(getStudentMembers({}));
       setBulkSheet(sheetName);
       toast.success(isRtl ? "تم استيراد الملف" : "File imported");
     } catch (err: any) {
@@ -568,7 +568,7 @@ export default function CertificatesPage() {
       }
 
       await Promise.all([
-        dispatch(getStudentMembers()).unwrap(),
+        dispatch(getStudentMembers({})).unwrap(),
         dispatch(getCertificates()).unwrap(),
       ]);
 
@@ -625,7 +625,7 @@ export default function CertificatesPage() {
       const sheetName = simpleImportSheetName.trim();
       const result = await dispatch(importSimpleStudentMembers({ file: simpleImportFile, sheetName })).unwrap();
       setSimpleImportResult(result.data);
-      dispatch(getStudentMembers());
+      dispatch(getStudentMembers({}));
       setSimpleSheet(sheetName);
       toast.success(isRtl ? "تم استيراد الشيت المبسط" : "Simple sheet imported");
     } catch (err: any) {
@@ -823,7 +823,7 @@ export default function CertificatesPage() {
       }
 
       await Promise.all([
-        dispatch(getStudentMembers()).unwrap(),
+        dispatch(getStudentMembers({})).unwrap(),
         dispatch(getCertificates()).unwrap(),
       ]);
 

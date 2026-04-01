@@ -259,7 +259,7 @@ export default function CertificateDesignerPage() {
     dispatch(getPackages());
     dispatch(getCourses({}));
     dispatch(getQuizzes());
-    dispatch(getStudentMembers());
+    dispatch(getStudentMembers({}));
   }, [dispatch, hasCertificateAccess]);
 
   if (!hasCertificateAccess) {

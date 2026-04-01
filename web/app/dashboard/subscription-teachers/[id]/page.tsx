@@ -99,7 +99,7 @@ export default function SubscriptionTeacherDetailsPage() {
       return;
     }
 
-    dispatch(getStudentMembers());
+    dispatch(getStudentMembers({}));
     dispatch(getTeacherGroups({ groupType: "group", teacherType: "subscription" }));
     dispatch(getWebsiteSettingsThunk());
   }, [dispatch, user, router]);
