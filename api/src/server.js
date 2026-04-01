@@ -287,6 +287,7 @@ const corsOptions = {
     "Authorization",
     "X-Requested-With",
     "Accept",
+    "X-No-Loading",
   ],
   maxAge: 86400,
   optionsSuccessStatus: 200,
