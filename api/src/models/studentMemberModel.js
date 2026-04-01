@@ -33,6 +33,14 @@ const studentMemberSchema = new mongoose.Schema(
       max: 100,
     },
 
+    // Student category in subscription dashboard
+    memberType: {
+      type: String,
+      enum: ["direct", "group"],
+      default: "direct",
+      index: true,
+    },
+
     // Assigned Teacher
     assignedTeacherId: {
       type: mongoose.Schema.Types.ObjectId,

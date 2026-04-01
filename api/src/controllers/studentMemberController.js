@@ -10,9 +10,11 @@ export const getMembers = async (req, res, next) => {
     const filters = {
       status: req.query.status,
       assignedTeacherId: req.query.assignedTeacherId,
+      assignedTeacherName: req.query.assignedTeacherName,
       governorate: req.query.governorate,
       packageId: req.query.packageId,
       search: req.query.search,
+      memberType: req.query.memberType,
     };
 
     const options = {
@@ -285,7 +287,8 @@ export const importMembers = async (req, res, next) => {
     const result = await studentMemberService.importMembers(
       req.file.buffer,
       req.user._id,
-      sheetName
+      sheetName,
+      req.body?.memberType
     );
 
     res.status(200).json({
@@ -340,6 +343,7 @@ export const exportMembers = async (req, res, next) => {
       governorate: req.query.governorate,
       packageId: req.query.packageId,
       search: req.query.search,
+      memberType: req.query.memberType,
     };
 
     const csvData = await studentMemberService.exportMembersToCSV(filters);

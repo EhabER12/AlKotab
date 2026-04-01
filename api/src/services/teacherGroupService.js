@@ -247,6 +247,12 @@ class TeacherGroupService {
       throw new ApiError(400, "Student already in this group");
     }
 
+    if (student.memberType !== "group") {
+      student.memberType = "group";
+      student.updatedBy = addedBy;
+      await student.save();
+    }
+
     teacherGroup.students.push({
       studentId,
       assignedDate: new Date(),

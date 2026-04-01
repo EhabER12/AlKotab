@@ -284,6 +284,13 @@ const menuItems: MenuItem[] = [
         href: "/dashboard/subscription-groups",
         roles: ["admin", "moderator"],
       },
+      {
+        titleKey: "admin.sidebar.subscriptionStudents",
+        title: "Subscription Students",
+        icon: <Users className="h-4 w-4" />,
+        href: "/dashboard/subscription-students",
+        roles: ["admin", "moderator"],
+      },
     ],
   },
   {

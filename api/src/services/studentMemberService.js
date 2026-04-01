@@ -60,8 +60,87 @@ export class StudentMemberService {
     this.whatsappService = new WhatsappNotificationService();
   }
 
+  async getGroupedStudentIds() {
+    const groupedStudentIds = await TeacherGroup.distinct("students.studentId", {
+      groupType: "group",
+    });
+
+    return groupedStudentIds
+      .filter(Boolean)
+      .map((id) => String(id));
+  }
+
+  async buildMembersQuery(filters = {}) {
+    const {
+      status,
+      assignedTeacherId,
+      assignedTeacherName,
+      governorate,
+      packageId,
+      search,
+      memberType,
+    } = filters;
+
+    const conditions = [];
+
+    if (status) conditions.push({ status });
+    if (assignedTeacherId) conditions.push({ assignedTeacherId });
+    if (assignedTeacherName) conditions.push({ assignedTeacherName });
+    if (governorate) conditions.push({ governorate });
+    if (packageId) conditions.push({ packageId });
+
+    if (search) {
+      conditions.push({
+        $or: [
+          { "name.ar": { $regex: search, $options: "i" } },
+          { "name.en": { $regex: search, $options: "i" } },
+          { phone: { $regex: search, $options: "i" } },
+        ],
+      });
+    }
+
+    const groupedStudentIds = await this.getGroupedStudentIds();
+
+    if (memberType === "group") {
+      conditions.push({
+        $or: [
+          { memberType: "group" },
+          { _id: { $in: groupedStudentIds } },
+        ],
+      });
+    } else if (memberType === "direct") {
+      conditions.push({ memberType: { $ne: "group" } });
+      if (groupedStudentIds.length > 0) {
+        conditions.push({ _id: { $nin: groupedStudentIds } });
+      }
+    }
+
+    return {
+      query: conditions.length > 0 ? { $and: conditions } : {},
+      groupedStudentIds,
+    };
+  }
+
+  normalizeMember(member, groupedStudentIdsSet = new Set()) {
+    const normalized =
+      typeof member?.toObject === "function" ? member.toObject() : member;
+    const memberId = String(normalized?._id || normalized?.id || "");
+    const isGrouped =
+      normalized?.memberType === "group" || groupedStudentIdsSet.has(memberId);
+
+    return {
+      ...normalized,
+      memberType: isGrouped ? "group" : "direct",
+    };
+  }
+
   // Import members from CSV
-  async importMembers(fileBuffer, createdBy, sheetName = "") {
+  async importMembers(
+    fileBuffer,
+    createdBy,
+    sheetName = "",
+    defaultMemberType = "direct"
+  ) {
     const records = parse(fileBuffer, {
       columns: true,
       skip_empty_lines: true,
@@ -303,6 +382,7 @@ export class StudentMemberService {
           name: { ar: nameValue, en: nameValue },
           phone: record.phone || "",
           governorate: record.governorate || record.province || "", // Support both column names
+          memberType: selectedGroup ? "group" : defaultMemberType,
         };
         if (startDate) {
           memberData.startDate = startDate;
@@ -479,22 +559,8 @@ export class StudentMemberService {
 
   // Get all student members with filters
   async getAllMembers(filters = {}, options = {}) {
-    const { status, assignedTeacherId, governorate, packageId, search } = filters;
-
-    const query = {};
-
-    if (status) query.status = status;
-    if (assignedTeacherId) query.assignedTeacherId = assignedTeacherId;
-    if (governorate) query.governorate = governorate;
-    if (packageId) query.packageId = packageId;
-
-    if (search) {
-      query.$or = [
-        { "name.ar": { $regex: search, $options: "i" } },
-        { "name.en": { $regex: search, $options: "i" } },
-        { phone: { $regex: search, $options: "i" } },
-      ];
-    }
+    const { query, groupedStudentIds } = await this.buildMembersQuery(filters);
+    const groupedStudentIdsSet = new Set(groupedStudentIds);
 
     const { page = 1, limit = 10, sort = "-createdAt" } = options;
     const skip = (page - 1) * limit;
@@ -509,8 +575,12 @@ export class StudentMemberService {
 
     const total = await StudentMember.countDocuments(query);
 
+    const normalizedMembers = members.map((member) =>
+      this.normalizeMember(member, groupedStudentIdsSet)
+    );
+
     return {
-      members,
+      members: normalizedMembers,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
@@ -532,7 +602,15 @@ export class StudentMemberService {
       throw new ApiError(404, "Member not found");
     }
 
-    return member;
+    const isGrouped = await TeacherGroup.exists({
+      groupType: "group",
+      "students.studentId": memberId,
+    });
+
+    return this.normalizeMember(
+      member,
+      isGrouped ? new Set([String(memberId)]) : new Set()
+    );
   }
 
   // Get subscriptions by user ID
@@ -575,7 +653,7 @@ export class StudentMemberService {
 
     logger.info("Student member created", { memberId: member._id, createdBy });
 
-    return member;
+    return this.normalizeMember(member);
   }
 
   // Update member
@@ -591,7 +669,15 @@ export class StudentMemberService {
 
     logger.info("Student member updated", { memberId, updatedBy });
 
-    return member;
+    const isGrouped = await TeacherGroup.exists({
+      groupType: "group",
+      "students.studentId": memberId,
+    });
+
+    return this.normalizeMember(
+      member,
+      isGrouped ? new Set([String(memberId)]) : new Set()
+    );
   }
 
   // Delete member
@@ -978,23 +1064,8 @@ export class StudentMemberService {
 
   // Export members to CSV
   async exportMembersToCSV(filters = {}) {
-    const { status, assignedTeacherId, assignedTeacherName, governorate, packageId, search } = filters;
-
-    const query = {};
-
-    if (status) query.status = status;
-    if (assignedTeacherId) query.assignedTeacherId = assignedTeacherId;
-    if (assignedTeacherName) query.assignedTeacherName = assignedTeacherName;
-    if (governorate) query.governorate = governorate;
-    if (packageId) query.packageId = packageId;
-
-    if (search) {
-      query.$or = [
-        { "name.ar": { $regex: search, $options: "i" } },
-        { "name.en": { $regex: search, $options: "i" } },
-        { phone: { $regex: search, $options: "i" } },
-      ];
-    }
+    const { query, groupedStudentIds } = await this.buildMembersQuery(filters);
+    const groupedStudentIdsSet = new Set(groupedStudentIds);
 
     const members = await StudentMember.find(query)
       .populate("assignedTeacherId", "fullName email")
@@ -1008,6 +1079,7 @@ export class StudentMemberService {
       "Name (EN)",
       "Phone",
       "Governorate",
+      "Member Type",
       "Package",
       "Teacher",
       "Start Date",
@@ -1030,6 +1102,7 @@ export class StudentMemberService {
         member.name?.en || "",
         member.phone || "",
         member.governorate || "",
+        this.normalizeMember(member, groupedStudentIdsSet).memberType,
         packageName,
         teacherName,
         member.startDate ? new Date(member.startDate).toISOString().split('T')[0] : "",

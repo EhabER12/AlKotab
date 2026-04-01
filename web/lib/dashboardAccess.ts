@@ -166,6 +166,11 @@ export const MODERATOR_DASHBOARD_ACCESS_GROUPS: ModeratorDashboardAccessGroup[] 
         titleKey: "admin.sidebar.subscriptionGroups",
         fallbackTitle: "Subscription Groups",
       },
+      {
+        href: "/dashboard/subscription-students",
+        titleKey: "admin.sidebar.subscriptionStudents",
+        fallbackTitle: "Subscription Students",
+      },
     ],
   },
 ];

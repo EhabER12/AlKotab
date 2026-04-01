@@ -2,6 +2,8 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "@/lib/axios";
 import { BilingualText } from "./courseService";
 
+export type StudentMemberType = "direct" | "group";
+
 export interface StudentMember {
   id: string;
   _id?: string;
@@ -38,6 +40,7 @@ export interface StudentMember {
   notes?: string;
   createdAt: string;
   updatedAt: string;
+  memberType?: StudentMemberType;
   // Legacy or optional
   studentName?: BilingualText;
   whatsappNumber?: string;
@@ -53,6 +56,7 @@ export interface CreateStudentMemberData {
   notes?: string;
   packageId?: string;
   packagePrice?: number;
+  memberType?: StudentMemberType;
 }
 
 const getApiErrorMessage = (error: any) =>
@@ -64,10 +68,19 @@ const getApiErrorMessage = (error: any) =>
 // Get all student members
 export const getStudentMembers = createAsyncThunk(
   "studentMembers/getAll",
-  async (_, { rejectWithValue }) => {
+  async (
+    filters: {
+      memberType?: StudentMemberType;
+    } = {},
+    { rejectWithValue }
+  ) => {
     try {
       // Request all records without pagination for dropdown lists
-      const response = await axios.get("/student-members?limit=9999");
+      const params = new URLSearchParams();
+      params.append("limit", "9999");
+      if (filters?.memberType) params.append("memberType", filters.memberType);
+
+      const response = await axios.get(`/student-members?${params.toString()}`);
       return response.data.data;
     } catch (error: any) {
       return rejectWithValue(
@@ -178,13 +191,18 @@ export const renewSubscription = createAsyncThunk(
 export const importStudentMembers = createAsyncThunk(
   "studentMembers/import",
   async (
-    { file, sheetName }: { file: File; sheetName: string },
+    {
+      file,
+      sheetName,
+      memberType,
+    }: { file: File; sheetName: string; memberType?: StudentMemberType },
     { rejectWithValue }
   ) => {
     try {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("sheetName", sheetName);
+      if (memberType) formData.append("memberType", memberType);
 
       const response = await axios.post("/student-members/import", formData, {
         headers: {
@@ -234,6 +252,7 @@ export const exportStudentMembers = async (filters: {
   governorate?: string;
   packageId?: string;
   search?: string;
+  memberType?: StudentMemberType;
 }) => {
   const params = new URLSearchParams();
   if (filters.status) params.append("status", filters.status);
@@ -242,6 +261,7 @@ export const exportStudentMembers = async (filters: {
   if (filters.governorate) params.append("governorate", filters.governorate);
   if (filters.packageId) params.append("packageId", filters.packageId);
   if (filters.search) params.append("search", filters.search);
+  if (filters.memberType) params.append("memberType", filters.memberType);
 
   const response = await axios.get(`/student-members/export?${params.toString()}`, {
     responseType: "blob",

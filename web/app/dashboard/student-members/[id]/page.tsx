@@ -56,6 +56,10 @@ export default function EditStudentMemberPage() {
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const backPath =
+        currentStudentMember?.memberType === "group"
+            ? "/dashboard/subscription-students"
+            : "/dashboard/student-members";
 
     useEffect(() => {
         if (!isAuthenticated() || !user) {
@@ -115,7 +119,7 @@ export default function EditStudentMemberPage() {
 
             await dispatch(updateStudentMember({ id, data: updateData })).unwrap();
             toast.success(isRtl ? "تم تحديث البيانات بنجاح" : "Student updated successfully");
-            router.push("/dashboard/student-members");
+            router.push(backPath);
         } catch (error) {
             console.error("Update failed", error);
             toast.error(isRtl ? "فشل التحديث" : "Update failed");

@@ -123,7 +123,7 @@ export default function SubscriptionGroupsPage() {
     }
 
     dispatch(getTeacherGroups({ groupType: "group" }));
-    dispatch(getStudentMembers());
+    dispatch(getStudentMembers({ memberType: "group" }));
     dispatch(getWebsiteSettingsThunk());
   }, [dispatch, user, router]);
 

@@ -10,6 +10,7 @@ import {
   exportStudentMembers,
   createStudentMember,
   StudentMember,
+  StudentMemberType,
 } from "@/store/services/studentMemberService";
 import { getPackages } from "@/store/services/packageService";
 import {
@@ -98,10 +99,39 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { toast } from "react-hot-toast";
 
-export default function StudentMembersPage() {
+interface StudentMembersPageContentProps {
+  memberType?: StudentMemberType;
+}
+
+export function StudentMembersPageContent({
+  memberType = "direct",
+}: StudentMembersPageContentProps) {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { t, isRtl } = useAdminLocale();
+  const isGroupMode = memberType === "group";
+  const pageTitle = isGroupMode
+    ? isRtl
+      ? "طلاب الاشتراكات"
+      : "Subscription Students"
+    : isRtl
+      ? "الطلاب المسجلين"
+      : "Registered Students";
+  const pageDescription = isGroupMode
+    ? isRtl
+      ? "إدارة طلاب الجروبات الخاصة بالاشتراكات"
+      : "Manage subscription group students"
+    : isRtl
+      ? "إدارة الطلاب الفردي المشتركين في الباقات"
+      : "Manage direct subscription students";
+  const emptyStateTitle = isGroupMode
+    ? isRtl
+      ? "لا يوجد طلاب اشتراكات"
+      : "No subscription students"
+    : isRtl
+      ? "لا يوجد طلاب مسجلين"
+      : "No registered students";
+  const effectivePlanType = isGroupMode ? "group" : "package";
 
 
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
@@ -125,7 +155,7 @@ export default function StudentMembersPage() {
     name: "",
     phone: "",
     governorate: "",
-    planType: "package",
+    planType: effectivePlanType,
     packageId: "",
     groupId: "",
     teacherId: "",
@@ -142,6 +172,7 @@ export default function StudentMembersPage() {
 
   // Get subscription teachers from settings
   const subscriptionTeachers = settings?.subscriptionTeachers || [];
+  const reloadStudents = () => dispatch(getStudentMembers({ memberType }));
 
   useEffect(() => {
     if (!isAuthenticated() || !user) {
@@ -154,17 +185,19 @@ export default function StudentMembersPage() {
       return;
     }
 
-    dispatch(getStudentMembers());
-    dispatch(getPackages());
-    dispatch(getCertificates());
+    reloadStudents();
     dispatch(getAllTeachersWithStats());
     dispatch(getTeacherGroups({ groupType: "group", isActive: true, teacherType: "subscription" }));
     dispatch(getWebsiteSettingsThunk());
-    // Try to get templates, but don't fail if it errors
-    dispatch(getAllTemplates()).catch((err) => {
-      console.warn("Failed to load templates:", err);
-    });
-  }, [dispatch, user, router]);
+    if (!isGroupMode) {
+      dispatch(getPackages());
+      dispatch(getCertificates());
+      // Try to get templates, but don't fail if it errors
+      dispatch(getAllTemplates()).catch((err) => {
+        console.warn("Failed to load templates:", err);
+      });
+    }
+  }, [dispatch, isGroupMode, memberType, user, router]);
 
   const handleDelete = async (id: string) => {
     if (
@@ -174,7 +207,7 @@ export default function StudentMembersPage() {
       try {
         await dispatch(deleteStudentMember(id)).unwrap();
         toast.success("تم حذف الطالب بنجاح");
-        dispatch(getStudentMembers());
+        reloadStudents();
       } catch (err) {
         console.error("Failed to delete student:", err);
         toast.error("فشل حذف الطالب");
@@ -308,9 +341,11 @@ export default function StudentMembersPage() {
     setImportLoading(true);
     try {
       const sheetName = importSheetName.trim();
-      const result = await dispatch(importStudentMembers({ file: importFile, sheetName })).unwrap();
+      const result = await dispatch(
+        importStudentMembers({ file: importFile, sheetName, memberType })
+      ).unwrap();
       setImportResult(result.data); // Assuming backend returns { data: { success: n, failed: n, errors: [] } }
-      dispatch(getStudentMembers());
+      reloadStudents();
       toast.success("تم استيراد الملف");
     } catch (err: any) {
       console.error("Import failed:", err);
@@ -326,12 +361,12 @@ export default function StudentMembersPage() {
       return;
     }
 
-    if (newStudent.planType === "package" && !newStudent.packageId) {
+    if (!isGroupMode && !newStudent.packageId) {
       toast.error("يجب اختيار باقة");
       return;
     }
 
-    if (newStudent.planType === "group" && !newStudent.groupId) {
+    if (!isGroupMode && newStudent.planType === "group" && !newStudent.groupId) {
       toast.error("يجب اختيار جروب");
       return;
     }
@@ -344,9 +379,10 @@ export default function StudentMembersPage() {
         governorate: newStudent.governorate,
         startDate: newStudent.startDate,
         nextDueDate: newStudent.endDate,
+        memberType,
       };
 
-      if (newStudent.planType === "package") {
+      if (!isGroupMode) {
         studentData.packageId = newStudent.packageId;
         const selectedPackage = packages.find(
           (pkg) => (pkg.id || pkg._id) === newStudent.packageId
@@ -366,7 +402,7 @@ export default function StudentMembersPage() {
             }
           }
         }
-      } else if (newStudent.planType === "group") {
+      } else if (newStudent.groupId) {
         const selectedGroup = teacherGroups.find(
           (group) => (group.id || group._id) === newStudent.groupId
         );
@@ -386,7 +422,7 @@ export default function StudentMembersPage() {
       const createdStudent = await dispatch(createStudentMember(studentData)).unwrap();
       const createdStudentId = createdStudent?.id || createdStudent?._id;
 
-      if (newStudent.planType === "group" && createdStudentId) {
+      if (isGroupMode && newStudent.groupId && createdStudentId) {
         try {
           await dispatch(
             addStudentToGroup({ groupId: newStudent.groupId, studentId: createdStudentId })
@@ -403,14 +439,14 @@ export default function StudentMembersPage() {
         name: "",
         phone: "",
         governorate: "",
-        planType: "package",
+        planType: effectivePlanType,
         packageId: "",
         groupId: "",
         teacherId: "",
         startDate: format(new Date(), "yyyy-MM-dd"),
         endDate: format(new Date(new Date().setMonth(new Date().getMonth() + 1)), "yyyy-MM-dd"),
       });
-      dispatch(getStudentMembers());
+      reloadStudents();
     } catch (err: any) {
       console.error("Failed to add student:", err);
       toast.error(typeof err === 'string' ? err : "فشل إضافة الطالب");
@@ -435,7 +471,8 @@ export default function StudentMembersPage() {
     setExportLoading(true);
     try {
       const filters: any = {};
-      if (selectedPackageId !== "all") filters.packageId = selectedPackageId;
+      filters.memberType = memberType;
+      if (!isGroupMode && selectedPackageId !== "all") filters.packageId = selectedPackageId;
       if (selectedGovernorate !== "all") filters.governorate = selectedGovernorate;
       if (selectedTeacherId !== "all") {
         // Check if filtering by text name
@@ -660,6 +697,73 @@ export default function StudentMembersPage() {
     return map;
   }, [teacherGroups]);
 
+  const teacherFilterOptions = useMemo(() => {
+    const options = new Map<string, { value: string; label: string }>();
+
+    if (!isGroupMode) {
+      teachersWithStats.forEach((teacher) => {
+        const teacherId = teacher.id || teacher._id || "";
+        const teacherName = getTextValue(teacher.fullName);
+        if (teacherId && teacherName) {
+          options.set(`id:${teacherId}`, { value: teacherId, label: teacherName });
+        }
+      });
+    }
+
+    studentMembers.forEach((student) => {
+      const teacherId = student.assignedTeacherId?.id || student.assignedTeacherId?._id || "";
+      const linkedTeacherName = teacherId
+        ? getTextValue(student.assignedTeacherId?.fullName)
+        : "";
+      const fallbackTeacherName = student.assignedTeacherName || "";
+
+      if (teacherId && linkedTeacherName) {
+        options.set(`id:${teacherId}`, { value: teacherId, label: linkedTeacherName });
+      } else if (fallbackTeacherName) {
+        options.set(`name:${fallbackTeacherName}`, {
+          value: `name:${fallbackTeacherName}`,
+          label: fallbackTeacherName,
+        });
+      }
+    });
+
+    return Array.from(options.values()).sort((a, b) => a.label.localeCompare(b.label));
+  }, [getTextValue, isGroupMode, studentMembers, teachersWithStats]);
+
+  const displayedStudents = useMemo(() => {
+    return studentMembers
+      .filter(
+        (student) =>
+          isGroupMode ||
+          selectedPackageId === "all" ||
+          student.packageId?.id === selectedPackageId ||
+          student.packageId?._id === selectedPackageId
+      )
+      .filter(
+        (student) =>
+          selectedGovernorate === "all" || student.governorate === selectedGovernorate
+      )
+      .filter((student) => {
+        if (selectedTeacherId === "all") return true;
+        if (selectedTeacherId.startsWith("name:")) {
+          const teacherName = selectedTeacherId.replace("name:", "");
+          return student.assignedTeacherName === teacherName;
+        }
+        return (
+          student.assignedTeacherId?.id === selectedTeacherId ||
+          student.assignedTeacherId?._id === selectedTeacherId
+        );
+      })
+      .filter((student) => !showOverdueOnly || student.status === "overdue");
+  }, [
+    isGroupMode,
+    selectedGovernorate,
+    selectedPackageId,
+    selectedTeacherId,
+    showOverdueOnly,
+    studentMembers,
+  ]);
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "active":
@@ -690,6 +794,10 @@ export default function StudentMembersPage() {
     >
       <div className="flex items-center justify-between">
         <div>
+          <h2 className="text-3xl font-bold tracking-tight">{pageTitle}</h2>
+          <p className="text-muted-foreground">{pageDescription}</p>
+          {false && (
+          <>
           <h2 className="text-3xl font-bold tracking-tight">
             {"طلاب الاشتراكات"}
           </h2>
@@ -698,6 +806,8 @@ export default function StudentMembersPage() {
               ? "إدارة الطلاب المشتركين في الباقات بنظام منفصل"
               : "Manage subscription students"}
           </p>
+          </>
+          )}
         </div>
         <div className="flex gap-2">
           <Button
@@ -770,6 +880,8 @@ export default function StudentMembersPage() {
 
 
       <div className="space-y-4">
+        {!isGroupMode && (
+          <>
         <Tabs defaultValue="all" value={selectedPackageId} onValueChange={setSelectedPackageId} dir={isRtl ? "rtl" : "ltr"}>
           <TabsList className="bg-muted/60 p-1 h-auto flex-wrap justify-start">
             <TabsTrigger value="all" className="px-4 py-2">
@@ -825,6 +937,8 @@ export default function StudentMembersPage() {
             </CardContent>
           </Card>
         )}
+          </>
+        )}
 
         <Card>
           <CardHeader>
@@ -837,31 +951,11 @@ export default function StudentMembersPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">{"جميع المعلمين"}</SelectItem>
-                    {teachersWithStats && teachersWithStats.length > 0 ? (
-                      teachersWithStats
-                        .sort((a, b) => {
-                          const nameA = a.fullName?.ar || a.fullName?.en || '';
-                          const nameB = b.fullName?.ar || b.fullName?.en || '';
-                          return nameA.localeCompare(nameB);
-                        })
-                        .map((teacher) => (
-                          <SelectItem key={teacher.id || teacher._id} value={teacher.id || teacher._id || ''}>
-                            {teacher.fullName?.ar || teacher.fullName?.en}
-                          </SelectItem>
-                        ))
-                    ) : (
-                      Array.from(new Set(
-                        studentMembers
-                          .filter(s => s.assignedTeacherName)
-                          .map(s => s.assignedTeacherName)
-                      ))
-                        .sort((a, b) => (a || '').localeCompare(b || ''))
-                        .map((teacherName) => (
-                          <SelectItem key={teacherName} value={`name:${teacherName}`}>
-                            {teacherName}
-                          </SelectItem>
-                        ))
-                    )}
+                    {teacherFilterOptions.map((teacher) => (
+                      <SelectItem key={teacher.value} value={teacher.value}>
+                        {teacher.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <Select value={selectedGovernorate} onValueChange={setSelectedGovernorate}>
@@ -897,8 +991,13 @@ export default function StudentMembersPage() {
               <div className="text-center py-12">
                 <Users className="mx-auto h-12 w-12 text-gray-400" />
                 <h3 className="mt-2 text-sm font-semibold text-gray-900">
+                  {emptyStateTitle}
+                </h3>
+                {false && (
+                <h3 className="mt-2 text-sm font-semibold text-gray-900">
                   {"لا يوجد طلاب اشتراكات"}
                 </h3>
+                )}
                 <p className="mt-1 text-sm text-gray-500">
                   {"قم باستيراد ملف لملء القائمة"}
                 </p>
@@ -922,21 +1021,7 @@ export default function StudentMembersPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {studentMembers
-                      .filter(s => selectedPackageId === "all" || (s.packageId?.id === selectedPackageId || s.packageId?._id === selectedPackageId))
-                      .filter(s => selectedGovernorate === "all" || s.governorate === selectedGovernorate)
-                      .filter(s => {
-                        if (selectedTeacherId === "all") return true;
-                        // Check if filtering by text name
-                        if (selectedTeacherId.startsWith('name:')) {
-                          const teacherName = selectedTeacherId.replace('name:', '');
-                          return s.assignedTeacherName === teacherName;
-                        }
-                        // Filter by linked teacher ID
-                        return s.assignedTeacherId?.id === selectedTeacherId || s.assignedTeacherId?._id === selectedTeacherId;
-                      })
-                      .filter(s => !showOverdueOnly || s.status === "overdue")
-                      .map((student, index) => (
+                    {displayedStudents.map((student, index) => (
                         <TableRow key={student.id || student._id || index}>
                           <TableCell className="font-medium">
                             {getTextValue(student.studentName || student.name)}
@@ -957,14 +1042,25 @@ export default function StudentMembersPage() {
                               const groupName = group
                                 ? getTextValue(group.groupName) || (isRtl ? "جروب" : "Group")
                                 : "";
-                              const label = student.packageId
-                                ? getTextValue(student.packageId.name)
-                                : groupName || (isRtl ? "??? ????" : "N/A");
-                              const badgeClass = student.packageId
-                                ? "bg-blue-50 text-blue-700 border-blue-200"
-                                : group
+                              const label = isGroupMode
+                                ? groupName ||
+                                  (student.packageId
+                                    ? getTextValue(student.packageId.name)
+                                    : isRtl
+                                      ? "غير مربوط بجروب"
+                                      : "Unassigned")
+                                : student.packageId
+                                  ? getTextValue(student.packageId.name)
+                                  : groupName || (isRtl ? "غير محدد" : "N/A");
+                              const badgeClass = isGroupMode
+                                ? group
                                   ? "bg-purple-50 text-purple-700 border-purple-200"
-                                  : "bg-gray-50 text-gray-600 border-gray-200";
+                                  : "bg-amber-50 text-amber-700 border-amber-200"
+                                : student.packageId
+                                  ? "bg-blue-50 text-blue-700 border-blue-200"
+                                  : group
+                                    ? "bg-purple-50 text-purple-700 border-purple-200"
+                                    : "bg-gray-50 text-gray-600 border-gray-200";
                               return (
                                 <Badge variant="outline" className={badgeClass}>
                                   {label}
@@ -1010,6 +1106,8 @@ export default function StudentMembersPage() {
                                     {isRtl ? "التفاصيل / تعديل" : "Details / Edit"}
                                   </Link>
                                 </DropdownMenuItem>
+                                {!isGroupMode && (
+                                  <>
                                 <DropdownMenuItem
                                   onClick={() => handleGenerateStudentCertificate(student)}
                                   disabled={certificateLoading === (student.id || student._id)}
@@ -1024,6 +1122,8 @@ export default function StudentMembersPage() {
                                       : "PDF Certificate"}
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
+                                  </>
+                                )}
                                 <DropdownMenuItem
                                   className="text-red-600"
                                   onClick={() => handleDelete(student.id || student._id || "")}
@@ -1036,18 +1136,7 @@ export default function StudentMembersPage() {
                           </TableCell>
                         </TableRow>
                       ))}
-                    {studentMembers
-                      .filter(s => selectedPackageId === "all" || (s.packageId?.id === selectedPackageId || s.packageId?._id === selectedPackageId))
-                      .filter(s => selectedGovernorate === "all" || s.governorate === selectedGovernorate)
-                      .filter(s => {
-                        if (selectedTeacherId === "all") return true;
-                        if (selectedTeacherId.startsWith('name:')) {
-                          const teacherName = selectedTeacherId.replace('name:', '');
-                          return s.assignedTeacherName === teacherName;
-                        }
-                        return s.assignedTeacherId?.id === selectedTeacherId || s.assignedTeacherId?._id === selectedTeacherId;
-                      })
-                      .filter(s => !showOverdueOnly || s.status === "overdue").length === 0 && (
+                    {displayedStudents.length === 0 && (
                         <TableRow>
                           <TableCell colSpan={9} className="h-24 text-center">
                             {isRtl ? "لا يوجد طلاب يطابقون الفلاتر المحددة" : "No students match the selected filters"}
@@ -1197,15 +1286,9 @@ export default function StudentMembersPage() {
             <div className="grid gap-2">
               <Label>{isRtl ? "نوع الاشتراك" : "Enrollment Type"} *</Label>
               <Select
-                value={newStudent.planType}
-                onValueChange={(value) =>
-                  setNewStudent({
-                    ...newStudent,
-                    planType: value,
-                    packageId: "",
-                    groupId: "",
-                  })
-                }
+                value={effectivePlanType}
+                onValueChange={() => undefined}
+                disabled
               >
                 <SelectTrigger>
                   <SelectValue placeholder={isRtl ? "اختر النوع" : "Select type"} />
@@ -1221,7 +1304,7 @@ export default function StudentMembersPage() {
               </Select>
             </div>
 
-            {newStudent.planType === "package" && (
+            {!isGroupMode && (
               <>
                 <div className="grid gap-2">
                   <Label>{isRtl ? "الباقة" : "Package"} *</Label>
@@ -1283,8 +1366,13 @@ export default function StudentMembersPage() {
               </>
             )}
 
-            {newStudent.planType === "group" && (
+            {isGroupMode && (
               <div className="grid gap-2">
+                <p className="text-xs text-muted-foreground">
+                  {isRtl
+                    ? "اختيار الجروب هنا اختياري. تقدر تضيف الطالب للجروب الآن أو تسيبه بدون ربط."
+                    : "Selecting a group here is optional. You can assign the student now or later."}
+                </p>
                 <Label>{isRtl ? "جروب" : "Group"} *</Label>
                 <Select
                   value={newStudent.groupId}
@@ -1355,4 +1443,8 @@ export default function StudentMembersPage() {
       </Dialog>
     </div>
   );
+}
+
+export default function StudentMembersPage() {
+  return <StudentMembersPageContent memberType="direct" />;
 }
