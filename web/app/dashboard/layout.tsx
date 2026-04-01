@@ -357,6 +357,13 @@ const menuItems: MenuItem[] = [
     roles: ["admin"],
   },
   {
+    titleKey: "admin.sidebar.communicationLogs",
+    title: "Communication Logs",
+    icon: <Mail className="h-4 w-4" />,
+    href: "/dashboard/communication-logs",
+    roles: ["admin", "moderator"],
+  },
+  {
     titleKey: "admin.sidebar.settings",
     title: "Settings",
     icon: <Settings className="h-4 w-4" />,

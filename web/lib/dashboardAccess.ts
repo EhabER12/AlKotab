@@ -108,6 +108,11 @@ export const MODERATOR_DASHBOARD_ACCESS_GROUPS: ModeratorDashboardAccessGroup[] 
         titleKey: "admin.sidebar.submissions",
         fallbackTitle: "Submissions",
       },
+      {
+        href: "/dashboard/communication-logs",
+        titleKey: "admin.sidebar.communicationLogs",
+        fallbackTitle: "Communication Logs",
+      },
     ],
   },
   {

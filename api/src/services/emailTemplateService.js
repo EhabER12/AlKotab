@@ -772,7 +772,14 @@ class EmailTemplateService {
         content = content.replace(regex, value);
       });
 
-      await this.emailService.sendEmail(to, subject, content);
+      await this.emailService.sendEmail(to, subject, content, [], {
+        templateName,
+        source: "email_template_service",
+        metadata: {
+          lang,
+          variableKeys: Object.keys(variables || {}),
+        },
+      });
       logger.info(`Templated email '${templateName}' sent to ${to}`);
     } catch (error) {
       logger.error(`Failed to send templated email '${templateName}' to ${to}`, {

@@ -6,6 +6,7 @@ import Settings from "../models/settingsModel.js";
 import { ApiError } from "../utils/apiError.js";
 import logger from "../utils/logger.js";
 import whatsappTemplateService from "./whatsappTemplateService.js";
+import communicationLogService from "./communicationLogService.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -693,9 +694,46 @@ export class WhatsappNotificationService {
         ...options,
         phone: number,
       });
-      const result = await this.manager.sendTextMessage(number, finalText);
-      sharedLastMessageTimestamp = Date.now();
-      return result;
+      try {
+        const result = await this.manager.sendTextMessage(number, finalText);
+        sharedLastMessageTimestamp = Date.now();
+        await communicationLogService.recordWhatsApp({
+          number,
+          text: finalText,
+          status: "success",
+          messageId: result?.data?.id || "",
+          templateName: options.templateName || "",
+          source: options.source || "whatsapp_service",
+          relatedModel: options.relatedModel || "",
+          relatedId: options.relatedId || "",
+          metadata: {
+            lang: options.lang || "ar",
+            recipientName: options.recipientName || "",
+            wrapped:
+              Boolean(deliverySettings?.messageWrapperEnabled) &&
+              !options.skipWrapper,
+            ...(options.metadata || {}),
+          },
+        });
+        return result;
+      } catch (error) {
+        await communicationLogService.recordWhatsApp({
+          number,
+          text: finalText,
+          status: "failed",
+          errorMessage: error.message,
+          templateName: options.templateName || "",
+          source: options.source || "whatsapp_service",
+          relatedModel: options.relatedModel || "",
+          relatedId: options.relatedId || "",
+          metadata: {
+            lang: options.lang || "ar",
+            recipientName: options.recipientName || "",
+            ...(options.metadata || {}),
+          },
+        });
+        throw error;
+      }
     });
   }
 
@@ -721,6 +759,21 @@ export class WhatsappNotificationService {
         templateName,
         number,
       });
+      await communicationLogService.recordWhatsApp({
+        number,
+        text: "",
+        status: "skipped",
+        templateName,
+        source: options.source || "whatsapp_template_service",
+        relatedModel: options.relatedModel || "",
+        relatedId: options.relatedId || "",
+        errorMessage: "template_inactive",
+        metadata: {
+          lang,
+          variableKeys: Object.keys(variables || {}),
+          ...(options.metadata || {}),
+        },
+      });
       return {
         success: false,
         skipped: true,
@@ -731,13 +784,52 @@ export class WhatsappNotificationService {
     return this.sendTextMessage(number, renderedMessage, {
       ...options,
       lang,
+      templateName,
+      source: options.source || "whatsapp_template_service",
       recipientName:
         options.recipientName || variables.name || variables.recipientName || "",
+      metadata: {
+        variableKeys: Object.keys(variables || {}),
+        ...(options.metadata || {}),
+      },
     });
   }
 
-  async sendMediaMessage(number, mediaUrl, caption = "") {
-    return this.manager.sendMediaMessage(number, mediaUrl, caption);
+  async sendMediaMessage(number, mediaUrl, caption = "", options = {}) {
+    try {
+      const result = await this.manager.sendMediaMessage(number, mediaUrl, caption);
+      await communicationLogService.recordWhatsApp({
+        number,
+        text: caption,
+        status: "success",
+        messageId: result?.data?.id || "",
+        templateName: options.templateName || "",
+        source: options.source || "whatsapp_media_service",
+        relatedModel: options.relatedModel || "",
+        relatedId: options.relatedId || "",
+        metadata: {
+          mediaUrl,
+          ...(options.metadata || {}),
+        },
+      });
+      return result;
+    } catch (error) {
+      await communicationLogService.recordWhatsApp({
+        number,
+        text: caption,
+        status: "failed",
+        errorMessage: error.message,
+        templateName: options.templateName || "",
+        source: options.source || "whatsapp_media_service",
+        relatedModel: options.relatedModel || "",
+        relatedId: options.relatedId || "",
+        metadata: {
+          mediaUrl,
+          ...(options.metadata || {}),
+        },
+      });
+      throw error;
+    }
   }
 
   async sendArticleCompletionNotification(numbers, articlesSummary) {

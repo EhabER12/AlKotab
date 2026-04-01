@@ -2,6 +2,7 @@ import nodemailer from "nodemailer";
 import { SettingsRepository } from "../repositories/settingsRepository.js";
 import { ApiError } from "../utils/apiError.js";
 import logger from "../utils/logger.js";
+import communicationLogService from "./communicationLogService.js";
 
 export class EmailService {
   constructor() {
@@ -65,12 +66,24 @@ export class EmailService {
     }
   }
 
-  async sendEmail(to, subject, html, attachments = []) {
+  async sendEmail(to, subject, html, attachments = [], logMeta = {}) {
     // Always re-initialize to ensure we have latest settings if they changed
     this.initialized = false;
     await this.initialize();
 
     if (!this.transporter) {
+      await communicationLogService.recordEmail({
+        to,
+        subject,
+        html,
+        status: "failed",
+        errorMessage: "Email service not initialized",
+        ...logMeta,
+        metadata: {
+          attachmentsCount: Array.isArray(attachments) ? attachments.length : 0,
+          ...(logMeta.metadata || {}),
+        },
+      });
       throw new ApiError(500, "Email service not initialized");
     }
 
@@ -91,9 +104,35 @@ export class EmailService {
       };
 
       const info = await this.transporter.sendMail(mailOptions);
+      await communicationLogService.recordEmail({
+        to,
+        subject,
+        html,
+        status: "success",
+        messageId: info?.messageId || "",
+        ...logMeta,
+        metadata: {
+          accepted: info?.accepted || [],
+          rejected: info?.rejected || [],
+          attachmentsCount: Array.isArray(attachments) ? attachments.length : 0,
+          ...(logMeta.metadata || {}),
+        },
+      });
       return info;
     } catch (error) {
       logger.error("Failed to send email", { error: error.message });
+      await communicationLogService.recordEmail({
+        to,
+        subject,
+        html,
+        status: "failed",
+        errorMessage: error.message,
+        ...logMeta,
+        metadata: {
+          attachmentsCount: Array.isArray(attachments) ? attachments.length : 0,
+          ...(logMeta.metadata || {}),
+        },
+      });
       throw new ApiError(500, "Failed to send email");
     }
   }
