@@ -124,7 +124,10 @@ export const updateMember = async (req, res, next) => {
 // @access  Private (Admin)
 export const deleteMember = async (req, res, next) => {
   try {
-    const result = await studentMemberService.deleteMember(req.params.id);
+    const result = await studentMemberService.deleteMember(
+      req.params.id,
+      req.user?._id
+    );
 
     res.status(200).json({
       success: true,

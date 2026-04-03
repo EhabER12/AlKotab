@@ -681,15 +681,44 @@ export class StudentMemberService {
   }
 
   // Delete member
-  async deleteMember(memberId) {
+  async deleteMember(memberId, deletedBy = null) {
     const member = await StudentMember.findById(memberId);
     if (!member) {
       throw new ApiError(404, "Member not found");
     }
 
+    const groups = await TeacherGroup.find({
+      "students.studentId": memberId,
+    });
+    const affectedTeacherIds = new Set();
+
+    for (const group of groups) {
+      group.students = group.students.filter(
+        (student) => String(student.studentId) !== String(memberId)
+      );
+
+      if (deletedBy) {
+        group.updatedBy = deletedBy;
+      }
+
+      await group.save();
+
+      if (group.teacherType !== "subscription" && group.teacherId) {
+        affectedTeacherIds.add(String(group.teacherId));
+      }
+    }
+
     await member.deleteOne();
 
-    logger.info("Student member deleted", { memberId });
+    if (affectedTeacherIds.size > 0) {
+      await Promise.allSettled(
+        Array.from(affectedTeacherIds).map((teacherId) =>
+          teacherGroupService.updateTeacherInfo(teacherId)
+        )
+      );
+    }
+
+    logger.info("Student member deleted", { memberId, deletedBy });
 
     return { message: "Member deleted successfully" };
   }

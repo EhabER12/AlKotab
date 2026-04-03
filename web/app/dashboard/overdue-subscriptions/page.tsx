@@ -6,16 +6,20 @@ import toast from "react-hot-toast";
 import { differenceInCalendarDays, format, startOfDay } from "date-fns";
 import {
   AlertCircle,
+  CheckCircle2,
   Loader2,
   MessageCircle,
   Search,
   Send,
   Smartphone,
+  Trash2,
   Users,
 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import {
+  deleteStudentMember,
   getStudentMembers,
+  renewSubscription,
   sendBulkStudentMemberWhatsAppReminders,
   sendStudentMemberWhatsAppReminder,
 } from "@/store/services/studentMemberService";
@@ -84,6 +88,8 @@ export default function OverdueSubscriptionsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [messageTemplate, setMessageTemplate] = useState(defaultReminderTemplate);
   const [rowSendingId, setRowSendingId] = useState<string | null>(null);
+  const [rowRenewingId, setRowRenewingId] = useState<string | null>(null);
+  const [rowDeletingId, setRowDeletingId] = useState<string | null>(null);
   const [bulkSending, setBulkSending] = useState(false);
 
   const { studentMembers, isLoading } = useAppSelector(
@@ -244,6 +250,58 @@ export default function OverdueSubscriptionsPage() {
       );
     } finally {
       setBulkSending(false);
+    }
+  };
+
+  const handleRenew = async (memberId: string) => {
+    setRowRenewingId(memberId);
+
+    try {
+      const updatedMember = await dispatch(renewSubscription(memberId)).unwrap();
+      const renewedUntil = updatedMember?.nextDueDate
+        ? format(new Date(updatedMember.nextDueDate), "yyyy-MM-dd")
+        : null;
+
+      toast.success(
+        isRtl
+          ? renewedUntil
+            ? `تم التجديد حتى ${renewedUntil}`
+            : "تم تجديد الاشتراك"
+          : renewedUntil
+            ? `Subscription renewed until ${renewedUntil}`
+            : "Subscription renewed"
+      );
+    } catch (error: any) {
+      toast.error(
+        error?.message ||
+          (isRtl ? "تعذر تجديد الاشتراك" : "Failed to renew subscription")
+      );
+    } finally {
+      setRowRenewingId(null);
+    }
+  };
+
+  const handleDelete = async (memberId: string, studentName: string) => {
+    const confirmed = window.confirm(
+      isRtl
+        ? `هل أنت متأكد من حذف اشتراك الطالب "${studentName}"؟`
+        : `Are you sure you want to delete "${studentName}"?`
+    );
+
+    if (!confirmed) return;
+
+    setRowDeletingId(memberId);
+
+    try {
+      await dispatch(deleteStudentMember(memberId)).unwrap();
+      toast.success(isRtl ? "تم حذف الاشتراك" : "Subscription deleted");
+    } catch (error: any) {
+      toast.error(
+        error?.message ||
+          (isRtl ? "تعذر حذف الاشتراك" : "Failed to delete subscription")
+      );
+    } finally {
+      setRowDeletingId(null);
     }
   };
 
@@ -466,6 +524,10 @@ export default function OverdueSubscriptionsPage() {
                       : groupName
                         ? "bg-purple-50 text-purple-700 border-purple-200"
                         : "bg-gray-50 text-gray-600 border-gray-200";
+                    const isRowBusy =
+                      rowSendingId === studentId ||
+                      rowRenewingId === studentId ||
+                      rowDeletingId === studentId;
 
                     return (
                       <TableRow
@@ -516,10 +578,28 @@ export default function OverdueSubscriptionsPage() {
                             <Button
                               type="button"
                               size="sm"
+                              className="bg-green-600 hover:bg-green-700"
+                              disabled={isRowBusy}
+                              onClick={() => handleRenew(studentId)}
+                            >
+                              {rowRenewingId === studentId ? (
+                                <Loader2
+                                  className={`h-4 w-4 animate-spin ${isRtl ? "ml-2" : "mr-2"}`}
+                                />
+                              ) : (
+                                <CheckCircle2
+                                  className={`h-4 w-4 ${isRtl ? "ml-2" : "mr-2"}`}
+                                />
+                              )}
+                              {isRtl ? "تم التجديد" : "Renewed"}
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
                               disabled={
                                 !settings?.whatsappConnected ||
                                 !phone ||
-                                rowSendingId === studentId
+                                isRowBusy
                               }
                               onClick={() => handleSendSingle(studentId)}
                             >
@@ -539,7 +619,7 @@ export default function OverdueSubscriptionsPage() {
                               variant="outline"
                               size="sm"
                               className="border-green-200 text-green-700 hover:bg-green-50"
-                              disabled={!whatsappLink}
+                              disabled={!whatsappLink || isRowBusy}
                               onClick={() => {
                                 if (whatsappLink) {
                                   window.open(whatsappLink, "_blank");
@@ -550,6 +630,25 @@ export default function OverdueSubscriptionsPage() {
                                 className={`h-4 w-4 ${isRtl ? "ml-2" : "mr-2"}`}
                               />
                               {isRtl ? "فتح" : "Open"}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
+                              disabled={isRowBusy}
+                              onClick={() => handleDelete(studentId, studentName)}
+                            >
+                              {rowDeletingId === studentId ? (
+                                <Loader2
+                                  className={`h-4 w-4 animate-spin ${isRtl ? "ml-2" : "mr-2"}`}
+                                />
+                              ) : (
+                                <Trash2
+                                  className={`h-4 w-4 ${isRtl ? "ml-2" : "mr-2"}`}
+                                />
+                              )}
+                              {isRtl ? "حذف" : "Delete"}
                             </Button>
                           </div>
                         </TableCell>

@@ -171,14 +171,9 @@ export const deleteStudentMember = createAsyncThunk(
 // Renew subscription
 export const renewSubscription = createAsyncThunk(
   "studentMembers/renew",
-  async (
-    { id, endDate }: { id: string; endDate: string },
-    { rejectWithValue }
-  ) => {
+  async (id: string, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`/student-members/${id}/renew`, {
-        subscriptionEndDate: endDate,
-      });
+      const response = await axios.post(`/student-members/${id}/renew`);
       return response.data.data;
     } catch (error: any) {
       return rejectWithValue(
